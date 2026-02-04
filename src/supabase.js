@@ -1,12 +1,29 @@
 // Supabase Client Configuration
-// This file should be loaded after config.js
+// Uses environment variables from Vercel (injected by Vite at build time)
 
 (function() {
-    // Get Supabase config from APP_CONFIG or environment
-    const config = window.APP_CONFIG || {};
+    // Get Supabase config from Vite build (defined in vite.config.js)
+    // These are replaced at build time with actual values from Vercel env vars
+    // For local development, create a .env.local file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 
-    const SUPABASE_URL = config.SUPABASE_URL || '';
-    const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || '';
+    // Try to get from Vite-defined constants (production build)
+    let SUPABASE_URL = '';
+    let SUPABASE_ANON_KEY = '';
+
+    try {
+        // These are replaced by Vite at build time
+        SUPABASE_URL = typeof __SUPABASE_URL__ !== 'undefined' ? __SUPABASE_URL__ : '';
+        SUPABASE_ANON_KEY = typeof __SUPABASE_ANON_KEY__ !== 'undefined' ? __SUPABASE_ANON_KEY__ : '';
+    } catch (e) {
+        // Fallback for local development without Vite build
+        console.log('Running in development mode without Vite build');
+    }
+
+    // Fallback to window config for local development (config.js is gitignored)
+    if (!SUPABASE_URL && window.APP_CONFIG) {
+        SUPABASE_URL = window.APP_CONFIG.SUPABASE_URL || '';
+        SUPABASE_ANON_KEY = window.APP_CONFIG.SUPABASE_ANON_KEY || '';
+    }
 
     // Initialize Supabase client if credentials are available
     if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {

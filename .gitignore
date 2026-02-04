@@ -2,8 +2,11 @@ node_modules/
 dist/
 .DS_Store
 *.log
+
+# Environment variables - NEVER COMMIT
 .env
 .env.local
+.env.production.local
 
 # Private config with admin emails - NEVER COMMIT
 config.js

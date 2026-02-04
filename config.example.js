@@ -1,5 +1,10 @@
 // EXAMPLE CONFIGURATION - Copy this file to config.js and fill in your values
 // config.js should NOT be committed to git (it's in .gitignore)
+//
+// IMPORTANT: Supabase credentials should be set as Environment Variables:
+// - In Vercel: Dashboard > Settings > Environment Variables
+// - For local dev: Create .env.local file (see .env.example)
+//
 window.APP_CONFIG = {
   // Main admin email (has full access to everything)
   ADMIN_EMAIL: "your-email@example.com",
@@ -15,10 +20,5 @@ window.APP_CONFIG = {
 
   // Invitation secret (used to generate secure invitation links)
   // Generate a random string for security
-  INVITATION_SECRET: "change-this-to-random-string",
-
-  // Supabase Configuration
-  // Get these from your Supabase project: Settings > API
-  SUPABASE_URL: "https://your-project.supabase.co",
-  SUPABASE_ANON_KEY: "your-anon-key-here"
+  INVITATION_SECRET: "change-this-to-random-string"
 };
