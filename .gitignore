@@ -4,3 +4,6 @@ dist/
 *.log
 .env
 .env.local
+
+# Private config with admin emails - NEVER COMMIT
+config.js

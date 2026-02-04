@@ -7,6 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>MyBuilding - ניהול</title>
 
+    <!-- Load config (contains admin emails - gitignored) -->
+    <script src="config.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -840,6 +843,183 @@
             color: var(--color-primary);
             font-weight: 600;
         }
+
+        /* ==================== ADMINS SECTION ==================== */
+        .admin-management-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .admin-section-title {
+            font-family: var(--font-display);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--space-md);
+        }
+
+        .admin-list-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            background: var(--color-sand);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-sm);
+        }
+
+        .admin-list-item.main-admin {
+            background: linear-gradient(135deg, var(--color-success-bg) 0%, #D4F0E7 100%);
+            border: 2px solid var(--color-success);
+        }
+
+        .admin-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .admin-list-item.main-admin .admin-avatar {
+            background: var(--color-success);
+        }
+
+        .admin-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .admin-email {
+            font-weight: 600;
+            font-size: 0.9375rem;
+            word-break: break-all;
+        }
+
+        .admin-role {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .admin-you-badge {
+            background: var(--color-primary);
+            color: white;
+            font-size: 0.625rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+        }
+
+        .no-admins-message {
+            text-align: center;
+            padding: var(--space-lg);
+            color: var(--color-text-muted);
+            font-size: 0.875rem;
+        }
+
+        .invite-section {
+            background: var(--color-info-bg);
+            border-radius: var(--radius-md);
+            padding: var(--space-lg);
+            margin-top: var(--space-md);
+        }
+
+        .invite-title {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .invite-instructions {
+            font-size: 0.8125rem;
+            color: var(--color-text-muted);
+            margin-bottom: var(--space-md);
+            line-height: 1.5;
+        }
+
+        .invite-link-container {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            border: 1px solid var(--color-sand-dark);
+        }
+
+        .invite-link-text {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--color-text);
+            word-break: break-all;
+            margin-bottom: var(--space-sm);
+            padding: var(--space-sm);
+            background: var(--color-sand);
+            border-radius: var(--radius-sm);
+        }
+
+        .invite-link-expiry {
+            font-size: 0.6875rem;
+            color: var(--color-text-light);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .btn-generate, .btn-copy {
+            width: 100%;
+            padding: var(--space-md);
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: var(--font-body);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-out-expo);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, var(--color-info) 0%, #4A7AC4 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-copy {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .btn-copy.copied {
+            background: var(--color-primary);
+        }
+
+        .btn-copy:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
     </style>
 </head>
 <body>
@@ -859,7 +1039,7 @@
                 admin: 'מנהל',
                 building: 'מגדלי הים',
                 stats: { balance: 'יתרה', debtors: 'חייבים', apartments: 'דירות' },
-                tabs: { finance: 'כספים', debtors: 'חייבים', expenses: 'הוצאות', users: 'משתמשים' },
+                tabs: { finance: 'כספים', debtors: 'חייבים', expenses: 'הוצאות', users: 'משתמשים', admins: 'מנהלים' },
                 finance: {
                     title: 'סיכום חודשי',
                     period: 'פברואר 2025',
@@ -903,14 +1083,27 @@
                     approve: 'אשר',
                     reject: 'דחה'
                 },
-                nav: { dashboard: 'בקרה', residents: 'דיירים', settings: 'הגדרות', exit: 'יציאה' }
+                nav: { dashboard: 'בקרה', residents: 'דיירים', settings: 'הגדרות', exit: 'יציאה' },
+                admins: {
+                    title: 'ניהול מנהלים',
+                    mainAdmin: 'מנהל ראשי',
+                    additionalAdmins: 'מנהלים נוספים',
+                    noAdditional: 'אין מנהלים נוספים',
+                    inviteTitle: 'הזמנת מנהל חדש',
+                    generateLink: 'צור קישור הזמנה',
+                    copyLink: 'העתק קישור',
+                    copied: 'הועתק!',
+                    linkExpiry: 'הקישור תקף ל-24 שעות',
+                    inviteInstructions: 'שלח את הקישור למנהל החדש. לאחר הרישום יקבל הרשאות מנהל.',
+                    you: '(אתה)'
+                }
             },
             en: {
                 title: 'Dashboard',
                 admin: 'Admin',
                 building: 'Sea Towers',
                 stats: { balance: 'Balance', debtors: 'Debtors', apartments: 'Apartments' },
-                tabs: { finance: 'Finance', debtors: 'Debtors', expenses: 'Expenses', users: 'Users' },
+                tabs: { finance: 'Finance', debtors: 'Debtors', expenses: 'Expenses', users: 'Users', admins: 'Admins' },
                 finance: {
                     title: 'Monthly Summary',
                     period: 'February 2025',
@@ -954,7 +1147,20 @@
                     approve: 'Approve',
                     reject: 'Reject'
                 },
-                nav: { dashboard: 'Dashboard', residents: 'Residents', settings: 'Settings', exit: 'Exit' }
+                nav: { dashboard: 'Dashboard', residents: 'Residents', settings: 'Settings', exit: 'Exit' },
+                admins: {
+                    title: 'Admin Management',
+                    mainAdmin: 'Main Admin',
+                    additionalAdmins: 'Additional Admins',
+                    noAdditional: 'No additional admins',
+                    inviteTitle: 'Invite New Admin',
+                    generateLink: 'Generate Invite Link',
+                    copyLink: 'Copy Link',
+                    copied: 'Copied!',
+                    linkExpiry: 'Link valid for 24 hours',
+                    inviteInstructions: 'Send this link to the new admin. They will receive admin permissions after registration.',
+                    you: '(You)'
+                }
             }
         };
 
@@ -1215,6 +1421,136 @@
             );
         };
 
+        // Admin verification helper
+        const getConfig = () => {
+            return window.APP_CONFIG || {
+                ADMIN_EMAIL: '',
+                ADMIN_EMAILS: [],
+                BUILDING_NAME: 'מגדלי הים',
+                BUILDING_NAME_EN: 'Sea Towers',
+                INVITATION_SECRET: ''
+            };
+        };
+
+        const generateInviteToken = () => {
+            const config = getConfig();
+            const timestamp = Date.now();
+            const expiry = timestamp + (24 * 60 * 60 * 1000); // 24 hours
+            const payload = {
+                type: 'admin_invite',
+                expiry: expiry,
+                secret: config.INVITATION_SECRET
+            };
+            // Simple base64 encoding (in production use proper JWT)
+            const token = btoa(JSON.stringify(payload));
+            return token;
+        };
+
+        const AdminsSection = () => {
+            const { t, lang } = useLanguage();
+            const [inviteLink, setInviteLink] = useState('');
+            const [copied, setCopied] = useState(false);
+            const config = getConfig();
+
+            const mainAdmin = config.ADMIN_EMAIL;
+            const additionalAdmins = config.ADMIN_EMAILS || [];
+
+            // Mock current user email (in real app, get from auth)
+            const currentUserEmail = mainAdmin;
+
+            const handleGenerateLink = () => {
+                const token = generateInviteToken();
+                const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
+                const link = `${baseUrl}auth.html?invite=${token}`;
+                setInviteLink(link);
+                setCopied(false);
+            };
+
+            const handleCopyLink = async () => {
+                try {
+                    await navigator.clipboard.writeText(inviteLink);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 3000);
+                } catch (err) {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = inviteLink;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 3000);
+                }
+            };
+
+            return (
+                <div>
+                    <div className="admin-management-card">
+                        <div className="admin-section-title">{t.admins.mainAdmin}</div>
+                        <div className="admin-list-item main-admin">
+                            <div className="admin-avatar">👑</div>
+                            <div className="admin-info">
+                                <div className="admin-email">{mainAdmin || 'Not configured'}</div>
+                                <div className="admin-role">
+                                    🔐 {t.admins.mainAdmin}
+                                    {mainAdmin === currentUserEmail && (
+                                        <span className="admin-you-badge">{t.admins.you}</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="admin-section-title" style={{ marginTop: 'var(--space-lg)' }}>
+                            {t.admins.additionalAdmins}
+                        </div>
+                        {additionalAdmins.length > 0 ? (
+                            additionalAdmins.map((email, index) => (
+                                <div key={index} className="admin-list-item">
+                                    <div className="admin-avatar">👤</div>
+                                    <div className="admin-info">
+                                        <div className="admin-email">{email}</div>
+                                        <div className="admin-role">
+                                            🛡️ {lang === 'he' ? 'מנהל' : 'Admin'}
+                                            {email === currentUserEmail && (
+                                                <span className="admin-you-badge">{t.admins.you}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-admins-message">{t.admins.noAdditional}</div>
+                        )}
+                    </div>
+
+                    <div className="invite-section">
+                        <div className="invite-title">✉️ {t.admins.inviteTitle}</div>
+                        <div className="invite-instructions">{t.admins.inviteInstructions}</div>
+
+                        {!inviteLink ? (
+                            <button className="btn-generate" onClick={handleGenerateLink}>
+                                🔗 {t.admins.generateLink}
+                            </button>
+                        ) : (
+                            <>
+                                <div className="invite-link-container">
+                                    <div className="invite-link-text">{inviteLink}</div>
+                                    <div className="invite-link-expiry">⏱️ {t.admins.linkExpiry}</div>
+                                </div>
+                                <button
+                                    className={`btn-copy ${copied ? 'copied' : ''}`}
+                                    onClick={handleCopyLink}
+                                >
+                                    {copied ? `✓ ${t.admins.copied}` : `📋 ${t.admins.copyLink}`}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
         const AddExpenseModal = ({ isOpen, onClose }) => {
             const { t } = useLanguage();
 
@@ -1282,15 +1618,18 @@
         };
 
         const App = () => {
-            const { t } = useLanguage();
+            const { t, lang } = useLanguage();
             const [activeTab, setActiveTab] = useState('finance');
             const [showExpenseModal, setShowExpenseModal] = useState(false);
+            const config = getConfig();
+            const buildingName = lang === 'he' ? config.BUILDING_NAME : config.BUILDING_NAME_EN;
 
             const tabs = [
                 { id: 'finance', icon: '💰', label: t.tabs.finance },
                 { id: 'debtors', icon: '📋', label: t.tabs.debtors, badge: 4 },
                 { id: 'expenses', icon: '🧾', label: t.tabs.expenses },
-                { id: 'users', icon: '👥', label: t.tabs.users, badge: 2 }
+                { id: 'users', icon: '👥', label: t.tabs.users, badge: 2 },
+                { id: 'admins', icon: '👑', label: t.tabs.admins }
             ];
 
             return (
@@ -1300,7 +1639,7 @@
                             <h1 className="page-title">{t.title}</h1>
                             <span className="admin-badge">👑 {t.admin}</span>
                         </div>
-                        <div className="building-info">🏢 {t.building}</div>
+                        <div className="building-info">🏢 {buildingName}</div>
                     </header>
 
                     <div className="stats-row">
@@ -1336,6 +1675,7 @@
                         {activeTab === 'debtors' && <DebtorsSection />}
                         {activeTab === 'expenses' && <ExpensesSection onAdd={() => setShowExpenseModal(true)} />}
                         {activeTab === 'users' && <UsersSection />}
+                        {activeTab === 'admins' && <AdminsSection />}
                     </main>
 
                     <BottomNav />
