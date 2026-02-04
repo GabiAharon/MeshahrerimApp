@@ -840,7 +840,8 @@
                     report: 'דווח על תקלה',
                     reportSub: 'נזילה, תאורה, מעלית...',
                     emergency: 'חירום',
-                    emergencySub: 'קווים חמים'
+                    emergencySub: 'קווים חמים',
+                    emergencyConfirm: 'להתקשר לקו החירום?'
                 },
                 notices: {
                     title: 'הודעות אחרונות',
@@ -881,7 +882,8 @@
                     report: 'Report Issue',
                     reportSub: 'Leak, lighting, elevator...',
                     emergency: 'Emergency',
-                    emergencySub: 'Hotlines'
+                    emergencySub: 'Hotlines',
+                    emergencyConfirm: 'Call emergency hotline?'
                 },
                 notices: {
                     title: 'Recent Notices',
@@ -1116,16 +1118,28 @@
         const QuickActions = () => {
             const { t } = useLanguage();
 
+            const handleReportFault = () => {
+                window.location.href = 'faults.html?action=new';
+            };
+
+            const handleEmergency = () => {
+                // Show emergency contacts modal or call
+                const emergencyNumber = '102'; // Building security or emergency
+                if (confirm(t.actions.emergencyConfirm || 'התקשר לחירום?')) {
+                    window.location.href = `tel:${emergencyNumber}`;
+                }
+            };
+
             return (
                 <section className="quick-actions">
                     <h2 className="section-title">{t.actions.title}</h2>
                     <div className="actions-grid">
-                        <button className="action-button">
+                        <button className="action-button" onClick={handleReportFault}>
                             <div className="action-icon fault">🔧</div>
                             <span className="action-label">{t.actions.report}</span>
                             <span className="action-sublabel">{t.actions.reportSub}</span>
                         </button>
-                        <button className="action-button">
+                        <button className="action-button" onClick={handleEmergency}>
                             <div className="action-icon emergency">🚨</div>
                             <span className="action-label">{t.actions.emergency}</span>
                             <span className="action-sublabel">{t.actions.emergencySub}</span>

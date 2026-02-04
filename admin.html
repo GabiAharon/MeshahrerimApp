@@ -1170,7 +1170,7 @@
                 admin: 'מנהל',
                 building: 'מגדלי הים',
                 stats: { balance: 'יתרה', debtors: 'חייבים', apartments: 'דירות' },
-                tabs: { finance: 'כספים', debtors: 'חייבים', expenses: 'הוצאות', users: 'משתמשים', notices: 'הודעות', admins: 'מנהלים' },
+                tabs: { finance: 'כספים', debtors: 'חייבים', expenses: 'הוצאות', users: 'משתמשים', faults: 'תקלות', notices: 'הודעות', admins: 'מנהלים' },
                 finance: {
                     title: 'סיכום חודשי',
                     period: 'פברואר 2025',
@@ -1236,7 +1236,18 @@
                         { id: 'event', icon: '🎉', title: 'אירוע קהילתי', type: 'event' }
                     ]
                 },
-                nav: { dashboard: 'בקרה', residents: 'דיירים', settings: 'הגדרות', exit: 'יציאה' },
+                faults: {
+                    title: 'ניהול תקלות',
+                    all: 'כל התקלות',
+                    open: 'פתוחות',
+                    inProgress: 'בטיפול',
+                    fixed: 'טופלו',
+                    empty: 'אין תקלות',
+                    markProgress: 'העבר לטיפול',
+                    markFixed: 'סמן כטופל',
+                    delete: 'מחק'
+                },
+                nav: { dashboard: 'בקרה', residents: 'דיירים', faults: 'תקלות', settings: 'הגדרות', exit: 'יציאה' },
                 admins: {
                     title: 'ניהול מנהלים',
                     mainAdmin: 'מנהל ראשי',
@@ -1256,7 +1267,7 @@
                 admin: 'Admin',
                 building: 'Sea Towers',
                 stats: { balance: 'Balance', debtors: 'Debtors', apartments: 'Apartments' },
-                tabs: { finance: 'Finance', debtors: 'Debtors', expenses: 'Expenses', users: 'Users', notices: 'Notices', admins: 'Admins' },
+                tabs: { finance: 'Finance', debtors: 'Debtors', expenses: 'Expenses', users: 'Users', faults: 'Faults', notices: 'Notices', admins: 'Admins' },
                 finance: {
                     title: 'Monthly Summary',
                     period: 'February 2025',
@@ -1322,7 +1333,18 @@
                         { id: 'event', icon: '🎉', title: 'Community Event', type: 'event' }
                     ]
                 },
-                nav: { dashboard: 'Dashboard', residents: 'Residents', settings: 'Settings', exit: 'Exit' },
+                faults: {
+                    title: 'Faults Management',
+                    all: 'All Faults',
+                    open: 'Open',
+                    inProgress: 'In Progress',
+                    fixed: 'Fixed',
+                    empty: 'No faults',
+                    markProgress: 'Mark In Progress',
+                    markFixed: 'Mark Fixed',
+                    delete: 'Delete'
+                },
+                nav: { dashboard: 'Dashboard', residents: 'Residents', faults: 'Faults', settings: 'Settings', exit: 'Exit' },
                 admins: {
                     title: 'Admin Management',
                     mainAdmin: 'Main Admin',
@@ -1606,16 +1628,150 @@
             );
         };
 
+        // Faults Section for Admin
+        const FaultsSection = () => {
+            const { t, lang } = useLanguage();
+            const [filter, setFilter] = useState('all');
+            const [faults, setFaults] = useState([]);
+
+            const filteredFaults = filter === 'all'
+                ? faults
+                : faults.filter(f => f.status === filter);
+
+            const handleStatusChange = (id, newStatus) => {
+                setFaults(prev => prev.map(f =>
+                    f.id === id ? { ...f, status: newStatus } : f
+                ));
+            };
+
+            const handleDelete = (id) => {
+                if (confirm(lang === 'he' ? 'למחוק את התקלה?' : 'Delete this fault?')) {
+                    setFaults(prev => prev.filter(f => f.id !== id));
+                }
+            };
+
+            const statusLabels = {
+                open: { he: 'פתוח', en: 'Open', color: 'var(--color-danger)' },
+                progress: { he: 'בטיפול', en: 'In Progress', color: 'var(--color-warning)' },
+                fixed: { he: 'טופל', en: 'Fixed', color: 'var(--color-success)' }
+            };
+
+            const categoryIcons = {
+                water: '💧',
+                electric: '💡',
+                elevator: '🛗',
+                cleaning: '🧹',
+                door: '🚪',
+                other: '📋'
+            };
+
+            return (
+                <div>
+                    <div className="filter-pills" style={{ marginBottom: 'var(--space-md)' }}>
+                        <button
+                            className={`filter-pill ${filter === 'all' ? 'active' : ''}`}
+                            onClick={() => setFilter('all')}
+                        >
+                            {t.faults.all} ({faults.length})
+                        </button>
+                        <button
+                            className={`filter-pill ${filter === 'open' ? 'active' : ''}`}
+                            onClick={() => setFilter('open')}
+                        >
+                            {t.faults.open} ({faults.filter(f => f.status === 'open').length})
+                        </button>
+                        <button
+                            className={`filter-pill ${filter === 'progress' ? 'active' : ''}`}
+                            onClick={() => setFilter('progress')}
+                        >
+                            {t.faults.inProgress} ({faults.filter(f => f.status === 'progress').length})
+                        </button>
+                        <button
+                            className={`filter-pill ${filter === 'fixed' ? 'active' : ''}`}
+                            onClick={() => setFilter('fixed')}
+                        >
+                            {t.faults.fixed} ({faults.filter(f => f.status === 'fixed').length})
+                        </button>
+                    </div>
+
+                    {filteredFaults.length === 0 ? (
+                        <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>✅</div>
+                            <div>{t.faults.empty}</div>
+                        </div>
+                    ) : (
+                        filteredFaults.map(fault => (
+                            <div key={fault.id} className="user-card" style={{ marginBottom: 'var(--space-sm)' }}>
+                                <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
+                                    {categoryIcons[fault.category] || '📋'}
+                                </div>
+                                <div className="user-info">
+                                    <div className="user-name">{fault.description}</div>
+                                    <div className="user-details">
+                                        {t.users.apartment} {fault.apartment} • {fault.date}
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', alignItems: 'flex-end' }}>
+                                    <span style={{
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        padding: 'var(--space-xs) var(--space-sm)',
+                                        borderRadius: 'var(--radius-full)',
+                                        background: statusLabels[fault.status].color + '20',
+                                        color: statusLabels[fault.status].color
+                                    }}>
+                                        {statusLabels[fault.status][lang]}
+                                    </span>
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                        {fault.status === 'open' && (
+                                            <button
+                                                className="user-action-btn approve"
+                                                onClick={() => handleStatusChange(fault.id, 'progress')}
+                                                title={t.faults.markProgress}
+                                            >
+                                                ⚙️
+                                            </button>
+                                        )}
+                                        {fault.status === 'progress' && (
+                                            <button
+                                                className="user-action-btn approve"
+                                                onClick={() => handleStatusChange(fault.id, 'fixed')}
+                                                title={t.faults.markFixed}
+                                            >
+                                                ✓
+                                            </button>
+                                        )}
+                                        <button
+                                            className="user-action-btn reject"
+                                            onClick={() => handleDelete(fault.id)}
+                                            title={t.faults.delete}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            );
+        };
+
         // Notices Section for Admin
         const NoticesSection = () => {
             const { t, lang } = useLanguage();
             const [selectedTemplate, setSelectedTemplate] = useState(null);
             const [activeNotices, setActiveNotices] = useState([]);
-            const [sendingStatus, setSendingStatus] = useState('idle'); // idle, sending, sent
+            const [sendingStatus, setSendingStatus] = useState('idle');
+            const [showCustomForm, setShowCustomForm] = useState(false);
+            const [customTitle, setCustomTitle] = useState('');
+            const [customContent, setCustomContent] = useState('');
+            const [customType, setCustomType] = useState('info');
 
             const handleSelectTemplate = (template) => {
                 setSelectedTemplate(template.id === selectedTemplate ? null : template.id);
                 setSendingStatus('idle');
+                setShowCustomForm(false);
             };
 
             const handleSendNotice = () => {
@@ -1626,7 +1782,6 @@
 
                 setSendingStatus('sending');
 
-                // Simulate sending (in real app, this would save to database)
                 setTimeout(() => {
                     const newNotice = {
                         id: Date.now(),
@@ -1644,6 +1799,26 @@
                 }, 500);
             };
 
+            const handleSendCustomNotice = () => {
+                if (!customTitle.trim()) return;
+
+                const typeIcons = { urgent: '⚠️', event: '📅', info: 'ℹ️', maintenance: '🔧' };
+
+                const newNotice = {
+                    id: Date.now(),
+                    icon: typeIcons[customType],
+                    title: customTitle,
+                    content: customContent,
+                    type: customType,
+                    date: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
+                };
+                setActiveNotices(prev => [newNotice, ...prev]);
+                setCustomTitle('');
+                setCustomContent('');
+                setCustomType('info');
+                setShowCustomForm(false);
+            };
+
             const handleDeleteNotice = (id) => {
                 setActiveNotices(prev => prev.filter(n => n.id !== id));
             };
@@ -1657,6 +1832,7 @@
 
             return (
                 <div>
+                    {/* Quick Templates */}
                     <div className="admin-management-card">
                         <div className="admin-section-title">{t.notices.templates}</div>
                         <div className="notices-templates-grid">
@@ -1684,6 +1860,76 @@
                         </button>
                     </div>
 
+                    {/* Custom Notice */}
+                    <div className="admin-management-card">
+                        <div className="admin-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>{lang === 'he' ? 'כתיבת הודעה מותאמת' : 'Write Custom Notice'}</span>
+                            <button
+                                onClick={() => { setShowCustomForm(!showCustomForm); setSelectedTemplate(null); }}
+                                style={{
+                                    background: showCustomForm ? 'var(--color-primary)' : 'var(--color-sand)',
+                                    color: showCustomForm ? 'white' : 'var(--color-text)',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-full)',
+                                    padding: 'var(--space-xs) var(--space-md)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600
+                                }}
+                            >
+                                {showCustomForm ? '✕' : '✏️'}
+                            </button>
+                        </div>
+
+                        {showCustomForm && (
+                            <div style={{ marginTop: 'var(--space-md)' }}>
+                                <div className="form-group">
+                                    <label className="form-label">{lang === 'he' ? 'כותרת' : 'Title'}</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={customTitle}
+                                        onChange={(e) => setCustomTitle(e.target.value)}
+                                        placeholder={lang === 'he' ? 'הכנס כותרת...' : 'Enter title...'}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{lang === 'he' ? 'תוכן' : 'Content'}</label>
+                                    <textarea
+                                        className="form-input"
+                                        value={customContent}
+                                        onChange={(e) => setCustomContent(e.target.value)}
+                                        placeholder={lang === 'he' ? 'הכנס תוכן ההודעה...' : 'Enter notice content...'}
+                                        rows={4}
+                                        style={{ resize: 'vertical' }}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{lang === 'he' ? 'סוג' : 'Type'}</label>
+                                    <select
+                                        className="form-select"
+                                        value={customType}
+                                        onChange={(e) => setCustomType(e.target.value)}
+                                        style={{ width: '100%', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-sand-dark)' }}
+                                    >
+                                        <option value="info">{typeLabels.info}</option>
+                                        <option value="urgent">{typeLabels.urgent}</option>
+                                        <option value="event">{typeLabels.event}</option>
+                                        <option value="maintenance">{typeLabels.maintenance}</option>
+                                    </select>
+                                </div>
+                                <button
+                                    className="btn-send-notice"
+                                    onClick={handleSendCustomNotice}
+                                    disabled={!customTitle.trim()}
+                                >
+                                    📢 {t.notices.send}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Active Notices */}
                     <div className="admin-management-card">
                         <div className="admin-section-title">{t.notices.active}</div>
                         {activeNotices.length === 0 ? (
@@ -1883,26 +2129,38 @@
             );
         };
 
-        const BottomNav = () => {
+        const BottomNav = ({ onNavigate }) => {
             const { t } = useLanguage();
             const navItems = [
-                { id: 'dashboard', icon: '📊', label: t.nav.dashboard, active: true },
-                { id: 'residents', icon: '🏠', label: t.nav.residents, href: 'index.html' },
-                { id: 'settings', icon: '⚙️', label: t.nav.settings },
+                { id: 'dashboard', icon: '📊', label: t.nav.dashboard, action: () => onNavigate('finance') },
+                { id: 'residents', icon: '🏠', label: t.nav.residents, action: () => onNavigate('users') },
+                { id: 'faults', icon: '🔧', label: t.nav.faults || 'תקלות', action: () => onNavigate('faults') },
                 { id: 'exit', icon: '🚪', label: t.nav.exit, href: 'index.html' }
             ];
 
             return (
                 <nav className="bottom-nav">
                     {navItems.map(item => (
-                        <a
-                            key={item.id}
-                            href={item.href || '#'}
-                            className={`nav-item ${item.active ? 'active' : ''}`}
-                        >
-                            <span className="nav-icon">{item.icon}</span>
-                            <span className="nav-label">{item.label}</span>
-                        </a>
+                        item.href ? (
+                            <a
+                                key={item.id}
+                                href={item.href}
+                                className="nav-item"
+                            >
+                                <span className="nav-icon">{item.icon}</span>
+                                <span className="nav-label">{item.label}</span>
+                            </a>
+                        ) : (
+                            <button
+                                key={item.id}
+                                className="nav-item"
+                                onClick={item.action}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <span className="nav-icon">{item.icon}</span>
+                                <span className="nav-label">{item.label}</span>
+                            </button>
+                        )
                     ))}
                 </nav>
             );
@@ -1920,6 +2178,7 @@
                 { id: 'debtors', icon: '📋', label: t.tabs.debtors },
                 { id: 'expenses', icon: '🧾', label: t.tabs.expenses },
                 { id: 'users', icon: '👥', label: t.tabs.users },
+                { id: 'faults', icon: '🔧', label: t.tabs.faults },
                 { id: 'notices', icon: '📢', label: t.tabs.notices },
                 { id: 'admins', icon: '👑', label: t.tabs.admins }
             ];
@@ -1967,11 +2226,12 @@
                         {activeTab === 'debtors' && <DebtorsSection />}
                         {activeTab === 'expenses' && <ExpensesSection onAdd={() => setShowExpenseModal(true)} />}
                         {activeTab === 'users' && <UsersSection />}
+                        {activeTab === 'faults' && <FaultsSection />}
                         {activeTab === 'notices' && <NoticesSection />}
                         {activeTab === 'admins' && <AdminsSection />}
                     </main>
 
-                    <BottomNav />
+                    <BottomNav onNavigate={setActiveTab} />
 
                     <AddExpenseModal
                         isOpen={showExpenseModal}

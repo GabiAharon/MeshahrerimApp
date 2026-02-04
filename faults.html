@@ -741,6 +741,7 @@
                 title: 'תקלות',
                 tabs: { myTickets: 'התקלות שלי', all: 'כל הבניין' },
                 status: { open: 'פתוח', progress: 'בטיפול', fixed: 'תוקן' },
+                empty: 'אין תקלות פתוחות',
                 categories: {
                     water: 'מים / נזילה',
                     electric: 'חשמל / תאורה',
@@ -781,6 +782,7 @@
                 title: 'Issues',
                 tabs: { myTickets: 'My Tickets', all: 'All Building' },
                 status: { open: 'Open', progress: 'In Progress', fixed: 'Fixed' },
+                empty: 'No open issues',
                 categories: {
                     water: 'Water / Leak',
                     electric: 'Electric / Lighting',
@@ -838,72 +840,8 @@
         const useLanguage = () => useContext(LanguageContext);
 
         // Mock Data
-        const mockTickets = [
-            {
-                id: 1,
-                category: 'water',
-                description: 'יש נזילה בתקרה של הלובי בקומה 2. המים מטפטפים ליד המעלית.',
-                descriptionEn: 'There is a leak in the ceiling of the lobby on floor 2. Water is dripping near the elevator.',
-                location: 'לובי קומה 2',
-                locationEn: 'Lobby Floor 2',
-                status: 'progress',
-                apartment: '7',
-                date: '2025-02-03',
-                hasImages: true,
-                timeline: [
-                    { status: 'opened', date: '2025-02-03 09:30' },
-                    { status: 'progress', date: '2025-02-03 14:00' }
-                ]
-            },
-            {
-                id: 2,
-                category: 'electric',
-                description: 'נורה שרופה בחדר המדרגות בין קומה 4 ל-5',
-                descriptionEn: 'Burnt bulb in the stairwell between floors 4 and 5',
-                location: 'חדר מדרגות קומה 4-5',
-                locationEn: 'Stairwell Floor 4-5',
-                status: 'open',
-                apartment: '12',
-                date: '2025-02-02',
-                hasImages: false,
-                timeline: [
-                    { status: 'opened', date: '2025-02-02 18:45' }
-                ]
-            },
-            {
-                id: 3,
-                category: 'elevator',
-                description: 'המעלית עושה רעש חריג בעת נסיעה',
-                descriptionEn: 'The elevator makes unusual noise while moving',
-                location: 'מעלית ראשית',
-                locationEn: 'Main Elevator',
-                status: 'fixed',
-                apartment: '3',
-                date: '2025-01-28',
-                hasImages: true,
-                timeline: [
-                    { status: 'opened', date: '2025-01-28 10:00' },
-                    { status: 'progress', date: '2025-01-29 09:00' },
-                    { status: 'fixed', date: '2025-01-30 16:00' }
-                ]
-            },
-            {
-                id: 4,
-                category: 'cleaning',
-                description: 'הרצפה בלובי הכניסה מלוכלכת ודורשת שטיפה',
-                descriptionEn: 'The floor in the entrance lobby is dirty and needs washing',
-                location: 'לובי כניסה',
-                locationEn: 'Entrance Lobby',
-                status: 'fixed',
-                apartment: '5',
-                date: '2025-01-25',
-                hasImages: false,
-                timeline: [
-                    { status: 'opened', date: '2025-01-25 08:00' },
-                    { status: 'fixed', date: '2025-01-25 14:00' }
-                ]
-            }
-        ];
+        // Empty tickets - will be populated from database
+        const mockTickets = [];
 
         const categoryIcons = {
             water: { icon: '💧', bg: 'water' },
