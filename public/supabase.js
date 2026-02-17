@@ -186,6 +186,28 @@
             return { data: result.data || [], error: result.error };
         },
 
+        subscribeToPendingUsers(onChange) {
+            const { client, error } = withClient();
+            if (error || !client || typeof onChange !== 'function') return () => {};
+
+            const channel = client
+                .channel('profiles-pending-watch')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'profiles' },
+                    () => onChange()
+                )
+                .subscribe();
+
+            return () => {
+                try {
+                    client.removeChannel(channel);
+                } catch (e) {
+                    console.warn('Failed to remove profiles-pending-watch channel', e);
+                }
+            };
+        },
+
         async createAdminInviteLink(hours = 24) {
             const { client, error: clientError } = withClient();
             if (clientError) return { error: clientError };

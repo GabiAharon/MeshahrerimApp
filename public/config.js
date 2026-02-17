@@ -1,4 +1,4 @@
-﻿// Auto-generated config - DO NOT EDIT
+// Auto-generated config - DO NOT EDIT
 // Generated at build time from environment variables
 window.APP_CONFIG = {
   "ADMIN_EMAIL": "",

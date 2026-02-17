@@ -1166,7 +1166,7 @@
     <script src="/supabase.js"></script>
 
     <script type="text/babel">
-        const { useState, useEffect, createContext, useContext } = React;
+        const { useState, useEffect, useRef, createContext, useContext } = React;
 
         // Translations
         const translations = {
@@ -2843,8 +2843,35 @@
             const [activeTab, setActiveTab] = useState('finance');
             const [showExpenseModal, setShowExpenseModal] = useState(false);
             const [accessState, setAccessState] = useState('checking');
+            const [pendingUsersCount, setPendingUsersCount] = useState(0);
+            const previousPendingUsersCountRef = useRef(null);
             const config = getConfig();
             const buildingName = lang === 'he' ? config.BUILDING_NAME : config.BUILDING_NAME_EN;
+
+            const refreshPendingUsersCount = async () => {
+                if (!window.AppAuth) return;
+
+                const { data, error } = await window.AppAuth.getPendingUsers();
+                if (error) {
+                    console.error('Failed to load pending users count', error);
+                    return;
+                }
+
+                const nextCount = (data || []).length;
+                const previousCount = previousPendingUsersCountRef.current;
+                if (previousCount !== null && nextCount > previousCount) {
+                    const message = lang === 'he'
+                        ? `נרשמו ${nextCount - previousCount} דיירים חדשים שמחכים לאישור`
+                        : `${nextCount - previousCount} new residents are waiting for approval`;
+
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification(lang === 'he' ? 'רישום חדש לדייר' : 'New resident signup', { body: message });
+                    }
+                }
+
+                previousPendingUsersCountRef.current = nextCount;
+                setPendingUsersCount(nextCount);
+            };
 
             useEffect(() => {
                 const checkAdminAccess = async () => {
@@ -2875,6 +2902,24 @@
                 checkAdminAccess();
             }, []);
 
+            useEffect(() => {
+                if (accessState !== 'allowed' || !window.AppAuth || !window.supabaseClient) return () => {};
+
+                refreshPendingUsersCount();
+
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().catch(() => {});
+                }
+
+                const unsubscribe = window.AppAuth.subscribeToPendingUsers(() => {
+                    refreshPendingUsersCount();
+                });
+
+                return () => {
+                    if (unsubscribe) unsubscribe();
+                };
+            }, [accessState, lang]);
+
             if (accessState === 'checking') {
                 return (
                     <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2887,7 +2932,7 @@
                 { id: 'finance', icon: '💰', label: t.tabs.finance },
                 { id: 'debtors', icon: '📋', label: t.tabs.debtors },
                 { id: 'expenses', icon: '🧾', label: t.tabs.expenses },
-                { id: 'users', icon: '👥', label: t.tabs.users },
+                { id: 'users', icon: '👥', label: t.tabs.users, badge: pendingUsersCount > 0 ? pendingUsersCount : null },
                 { id: 'faults', icon: '🔧', label: t.tabs.faults },
                 { id: 'notices', icon: '📢', label: t.tabs.notices },
                 { id: 'polls', icon: '📊', label: t.tabs.polls },
@@ -2902,7 +2947,7 @@
                 { id: 'professionals', icon: '👷', label: lang === 'he' ? 'בעלי מקצוע' : 'Professionals' },
                 { id: 'marketplace', icon: '🛒', label: lang === 'he' ? 'לוח מודעות' : 'Marketplace' },
                 { id: 'faults', icon: '🔧', label: lang === 'he' ? 'תקלות' : 'Faults' },
-                { id: 'users', icon: '👥', label: lang === 'he' ? 'אישור דיירים' : 'Resident Approval' }
+                { id: 'users', icon: '👥', label: lang === 'he' ? `אישור דיירים (${pendingUsersCount})` : `Resident Approval (${pendingUsersCount})` }
             ];
 
             return (
@@ -2927,6 +2972,22 @@
                         <div className="stat-card">
                             <div className="stat-value neutral">0</div>
                             <div className="stat-label">{t.stats.apartments}</div>
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '0 var(--space-lg) var(--space-sm)' }}>
+                        <div style={{
+                            background: pendingUsersCount > 0 ? 'var(--color-warning-bg)' : 'white',
+                            color: 'var(--color-text)',
+                            border: '1px solid var(--color-sand-dark)',
+                            borderRadius: '12px',
+                            padding: '10px 12px',
+                            fontSize: '0.82rem',
+                            fontWeight: 600
+                        }}>
+                            {lang === 'he'
+                                ? `ממתינים לאישור: ${pendingUsersCount}`
+                                : `Pending approvals: ${pendingUsersCount}`}
                         </div>
                     </div>
 
