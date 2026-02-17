@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/theme-boost.css">
 
     <style>
         /* ============================================
@@ -856,6 +857,8 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext } = React;
@@ -1143,12 +1146,15 @@
             const [password, setPassword] = useState('');
             const [showPassword, setShowPassword] = useState(false);
             const [errors, setErrors] = useState({});
+            const [authError, setAuthError] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
 
             const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-            const handleSubmit = (e) => {
+            const handleSubmit = async (e) => {
                 e.preventDefault();
                 const newErrors = {};
+                setAuthError('');
 
                 if (!validateEmail(email)) {
                     newErrors.email = t.login.errors.email;
@@ -1160,7 +1166,30 @@
                 setErrors(newErrors);
 
                 if (Object.keys(newErrors).length === 0) {
-                    onSuccess();
+                    if (!window.AppAuth) {
+                        setAuthError('Authentication is not configured.');
+                        return;
+                    }
+                    setIsSubmitting(true);
+                    const { data, error } = await window.AppAuth.signIn(email.trim(), password);
+                    setIsSubmitting(false);
+
+                    if (error) {
+                        setAuthError(error.message || 'Login failed');
+                        return;
+                    }
+                    onSuccess(data?.user);
+                }
+            };
+
+            const handleGoogleLogin = async () => {
+                if (!window.AppAuth) {
+                    setAuthError('Authentication is not configured.');
+                    return;
+                }
+                const { error } = await window.AppAuth.signInWithGoogle();
+                if (error) {
+                    setAuthError(error.message || 'Google login failed');
                 }
             };
 
@@ -1221,9 +1250,15 @@
                             </button>
 
                             <button type="submit" className="btn btn-primary">
-                                {t.login.submit}
+                                {isSubmitting ? '...' : t.login.submit}
                             </button>
                         </form>
+
+                        {authError && (
+                            <div className="form-error" style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
+                                {authError}
+                            </div>
+                        )}
 
                         <div className="divider">
                             <span className="divider-line"></span>
@@ -1231,7 +1266,7 @@
                             <span className="divider-line"></span>
                         </div>
 
-                        <button className="social-btn">
+                        <button className="social-btn" onClick={handleGoogleLogin}>
                             <Icons.Google />
                             {t.login.google}
                         </button>
@@ -1371,7 +1406,7 @@
         // ============================================
         // REGISTER STEP 2
         // ============================================
-        const RegisterStep2 = ({ onBack, onSubmit, authData }) => {
+        const RegisterStep2 = ({ onBack, onSubmit, authData, isSubmitting }) => {
             const { t, toggleLanguage, lang } = useLanguage();
             const [fullName, setFullName] = useState('');
             const [phone, setPhone] = useState('');
@@ -1504,8 +1539,8 @@
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-primary" style={{ marginTop: 'var(--space-lg)' }}>
-                                {t.register.step2.submit}
+                            <button type="submit" className="btn btn-primary" style={{ marginTop: 'var(--space-lg)' }} disabled={isSubmitting}>
+                                {isSubmitting ? '...' : t.register.step2.submit}
                             </button>
                         </form>
                     </div>
@@ -1560,6 +1595,35 @@
             );
         };
 
+        const getConfig = () => window.APP_CONFIG || {};
+
+        const parseInviteToken = () => {
+            const params = new URLSearchParams(window.location.search);
+            const inviteCode = params.get('invite_code');
+            if (inviteCode) {
+                return { valid: true, type: 'code', code: inviteCode };
+            }
+
+            const config = getConfig();
+            const token = params.get('invite');
+            if (!token) return { valid: false, reason: 'missing' };
+
+            try {
+                const payload = JSON.parse(atob(token));
+                const notExpired = typeof payload.expiry === 'number' && payload.expiry > Date.now();
+                const validSecret = payload.secret && payload.secret === config.INVITATION_SECRET;
+                const validType = payload.type === 'admin_invite';
+
+                return {
+                    valid: Boolean(notExpired && validSecret && validType),
+                    type: 'legacy',
+                    payload
+                };
+            } catch (error) {
+                return { valid: false, reason: 'invalid' };
+            }
+        };
+
         // ============================================
         // MAIN APP
         // ============================================
@@ -1567,21 +1631,148 @@
             const [screen, setScreen] = useState('welcome');
             const [authData, setAuthData] = useState({});
             const [userData, setUserData] = useState(null);
+            const [isLoadingSession, setIsLoadingSession] = useState(true);
+            const [isSubmittingRegister, setIsSubmittingRegister] = useState(false);
+            const [globalError, setGlobalError] = useState('');
+            const [inviteState] = useState(parseInviteToken());
+
+            useEffect(() => {
+                const bootstrapSession = async () => {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setIsLoadingSession(false);
+                        return;
+                    }
+
+                    try {
+                        const user = await window.AppAuth.getCurrentUser();
+                        if (!user) {
+                            setIsLoadingSession(false);
+                            return;
+                        }
+
+                        const profile = await window.AppAuth.getUserProfile(user.id);
+                        if (!profile) {
+                            setIsLoadingSession(false);
+                            return;
+                        }
+
+                        if (profile.is_approved) {
+                            window.location.href = profile.is_admin ? 'admin.html' : 'index.html';
+                            return;
+                        }
+
+                        setUserData({
+                            apartment: profile.apartment || '',
+                            building: getConfig().BUILDING_NAME || 'MyBuilding'
+                        });
+                        setScreen('pending');
+                    } catch (error) {
+                        console.error('Failed to load session', error);
+                    } finally {
+                        setIsLoadingSession(false);
+                    }
+                };
+
+                bootstrapSession();
+            }, []);
 
             const handleRegisterStep1 = (data) => {
                 setAuthData(data);
                 setScreen('register2');
             };
 
-            const handleRegisterComplete = (data) => {
-                setUserData(data);
+            const handleRegisterComplete = async (data) => {
+                setGlobalError('');
+                if (!window.AppAuth) {
+                    setGlobalError('Authentication is not configured.');
+                    return;
+                }
+
+                setIsSubmittingRegister(true);
+                const metadata = {
+                    full_name: data.fullName,
+                    apartment: data.apartment,
+                    user_type: data.status,
+                    phone: data.phone
+                };
+
+                const { data: signUpData, error } = await window.AppAuth.signUp(
+                    data.email.trim(),
+                    data.password,
+                    metadata
+                );
+
+                if (error) {
+                    setGlobalError(error.message || 'Registration failed');
+                    setIsSubmittingRegister(false);
+                    return;
+                }
+
+                const user = signUpData?.user;
+                if (user?.id) {
+                    const updatePayload = {
+                        full_name: data.fullName,
+                        phone: data.phone,
+                        apartment: data.apartment,
+                        user_type: data.status
+                    };
+                    await window.AppAuth.updateMyProfile(user.id, updatePayload);
+
+                    if (inviteState.valid && inviteState.type === 'code') {
+                        await window.AppAuth.claimAdminInvite(inviteState.code);
+                    }
+                }
+
+                setUserData({
+                    apartment: data.apartment,
+                    building: getConfig().BUILDING_NAME || 'MyBuilding'
+                });
+                setIsSubmittingRegister(false);
                 setScreen('pending');
             };
 
-            const handleLoginSuccess = () => {
-                // For demo, redirect to dashboard
-                window.location.href = 'index.html';
+            const handleLoginSuccess = async (user) => {
+                if (!window.AppAuth || !user?.id) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const profile = await window.AppAuth.getUserProfile(user.id);
+                if (!profile) {
+                    setGlobalError('Could not load user profile.');
+                    return;
+                }
+
+                if (profile.is_approved) {
+                    window.location.href = profile.is_admin ? 'admin.html' : 'index.html';
+                    return;
+                }
+
+                setUserData({
+                    apartment: profile.apartment || '',
+                    building: getConfig().BUILDING_NAME || 'MyBuilding'
+                });
+                setScreen('pending');
             };
+
+            const handlePendingLogout = async () => {
+                if (window.AppAuth) {
+                    await window.AppAuth.signOut();
+                }
+                setUserData(null);
+                setAuthData({});
+                setScreen('welcome');
+            };
+
+            if (isLoadingSession) {
+                return (
+                    <LanguageProvider>
+                        <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ color: 'var(--color-text-muted)' }}>Loading...</div>
+                        </div>
+                    </LanguageProvider>
+                );
+            }
 
             return (
                 <LanguageProvider>
@@ -1620,18 +1811,32 @@
                                 onBack={() => setScreen('register1')}
                                 onSubmit={handleRegisterComplete}
                                 authData={authData}
+                                isSubmitting={isSubmittingRegister}
                             />
                         )}
 
                         {screen === 'pending' && (
                             <PendingScreen
                                 userData={userData}
-                                onLogout={() => {
-                                    setUserData(null);
-                                    setAuthData({});
-                                    setScreen('welcome');
-                                }}
+                                onLogout={handlePendingLogout}
                             />
+                        )}
+
+                        {globalError && (
+                            <div style={{
+                                position: 'fixed',
+                                bottom: '20px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: 'var(--color-danger-bg)',
+                                color: 'var(--color-danger)',
+                                borderRadius: 'var(--radius-md)',
+                                padding: 'var(--space-sm) var(--space-md)',
+                                fontSize: '0.875rem',
+                                zIndex: 1000
+                            }}>
+                                {globalError}
+                            </div>
                         )}
                     </div>
                 </LanguageProvider>

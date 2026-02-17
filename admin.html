@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/theme-boost.css">
 
     <style>
         :root {
@@ -1645,7 +1646,40 @@
         const UsersSection = () => {
             const { t, lang } = useLanguage();
             const [filter, setFilter] = useState('all');
-            const [users, setUsers] = useState(mockUsers);
+            const [users, setUsers] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+
+            const loadUsers = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getAllUsers();
+                if (error) {
+                    console.error('Failed to load users', error);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const mapped = (data || []).map((user) => {
+                    const status = user.is_admin ? 'admin' : (user.is_approved ? 'active' : 'pending');
+                    return {
+                        id: user.id,
+                        name: user.full_name || user.email || '',
+                        apartment: user.apartment || '-',
+                        type: user.user_type || 'tenant',
+                        status
+                    };
+                });
+
+                setUsers(mapped);
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                loadUsers();
+            }, []);
 
             const filteredUsers = filter === 'all'
                 ? users
@@ -1653,15 +1687,34 @@
 
             const pendingCount = users.filter(u => u.status === 'pending').length;
 
-            const handleApprove = (id) => {
-                setUsers(prev => prev.map(u =>
-                    u.id === id ? { ...u, status: 'active' } : u
-                ));
+            const handleApprove = async (id) => {
+                if (!window.AppAuth) return;
+                const { error } = await window.AppAuth.approveUser(id);
+                if (error) {
+                    alert(error.message || 'Failed to approve user');
+                    return;
+                }
+                await loadUsers();
             };
 
-            const handleReject = (id) => {
-                setUsers(prev => prev.filter(u => u.id !== id));
+            const handleReject = async (id) => {
+                if (!window.AppAuth) return;
+                const { error } = await window.AppAuth.rejectUser(id);
+                if (error) {
+                    alert(error.message || 'Failed to reject user');
+                    return;
+                }
+                await loadUsers();
             };
+
+            if (isLoading) {
+                return (
+                    <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>⏳</div>
+                        <div>Loading...</div>
+                    </div>
+                );
+            }
 
             if (users.length === 0) {
                 return (
@@ -1701,7 +1754,7 @@
                                 {user.status === 'pending' ? '⏳' : '👤'}
                             </div>
                             <div className="user-info">
-                                <div className="user-name">{user.name[lang]}</div>
+                                <div className="user-name">{typeof user.name === 'object' ? user.name[lang] : user.name}</div>
                                 <div className="user-details">
                                     {t.users.apartment} {user.apartment} • {user.type === 'owner' ? '🏠' : '🔑'}
                                 </div>
@@ -1720,7 +1773,7 @@
                                         onClick={() => handleReject(user.id)}
                                         title={t.users.reject}
                                     >
-                                        ✗
+                                        ✕
                                     </button>
                                 </div>
                             ) : (
@@ -1739,20 +1792,59 @@
             const { t, lang } = useLanguage();
             const [filter, setFilter] = useState('all');
             const [faults, setFaults] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+
+            const loadFaults = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getFaults();
+                if (error) {
+                    console.error('Failed to load faults', error);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const mapped = (data || []).map((fault) => ({
+                    id: fault.id,
+                    category: fault.category,
+                    description: fault.description,
+                    apartment: fault.profiles?.apartment || '-',
+                    date: new Date(fault.created_at).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US'),
+                    status: fault.status || 'open'
+                }));
+                setFaults(mapped);
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                loadFaults();
+            }, []);
 
             const filteredFaults = filter === 'all'
                 ? faults
                 : faults.filter(f => f.status === filter);
 
-            const handleStatusChange = (id, newStatus) => {
-                setFaults(prev => prev.map(f =>
-                    f.id === id ? { ...f, status: newStatus } : f
-                ));
+            const handleStatusChange = async (id, newStatus) => {
+                if (!window.AppAuth) return;
+                const { error } = await window.AppAuth.updateFaultStatus(id, newStatus);
+                if (error) {
+                    alert(error.message || 'Failed to update fault');
+                    return;
+                }
+                await loadFaults();
             };
 
-            const handleDelete = (id) => {
+            const handleDelete = async (id) => {
                 if (confirm(lang === 'he' ? 'למחוק את התקלה?' : 'Delete this fault?')) {
-                    setFaults(prev => prev.filter(f => f.id !== id));
+                    const { error } = await window.AppAuth.deleteFault(id);
+                    if (error) {
+                        alert(error.message || 'Failed to delete fault');
+                        return;
+                    }
+                    await loadFaults();
                 }
             };
 
@@ -1800,7 +1892,12 @@
                         </button>
                     </div>
 
-                    {filteredFaults.length === 0 ? (
+                    {isLoading ? (
+                        <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>⏳</div>
+                            <div>Loading...</div>
+                        </div>
+                    ) : filteredFaults.length === 0 ? (
                         <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>
                             <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>✅</div>
                             <div>{t.faults.empty}</div>
@@ -1880,7 +1977,7 @@
                 setShowCustomForm(false);
             };
 
-            const handleSendNotice = () => {
+            const handleSendNotice = async () => {
                 if (!selectedTemplate) return;
 
                 const template = t.notices.templateList.find(t => t.id === selectedTemplate);
@@ -1888,27 +1985,60 @@
 
                 setSendingStatus('sending');
 
-                setTimeout(() => {
-                    const newNotice = {
-                        id: Date.now(),
-                        icon: template.icon,
+                if (window.AppAuth && window.supabaseClient) {
+                    const { error } = await window.AppAuth.createNotice({
                         title: template.title,
-                        type: template.type,
-                        date: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
-                    };
-                    setActiveNotices(prev => [newNotice, ...prev]);
-                    setSendingStatus('sent');
-                    setTimeout(() => {
-                        setSelectedTemplate(null);
+                        content: template.description || '',
+                        type: template.type
+                    });
+                    if (error) {
                         setSendingStatus('idle');
-                    }, 1500);
-                }, 500);
+                        alert(error.message || 'Failed to send notice');
+                        return;
+                    }
+
+                    await window.AppAuth.sendPushBroadcast({
+                        title: template.title,
+                        message: template.description || template.title
+                    });
+                }
+
+                const newNotice = {
+                    id: Date.now(),
+                    icon: template.icon,
+                    title: template.title,
+                    type: template.type,
+                    date: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
+                };
+                setActiveNotices(prev => [newNotice, ...prev]);
+                setSendingStatus('sent');
+                setTimeout(() => {
+                    setSelectedTemplate(null);
+                    setSendingStatus('idle');
+                }, 1500);
             };
 
-            const handleSendCustomNotice = () => {
+            const handleSendCustomNotice = async () => {
                 if (!customTitle.trim()) return;
 
                 const typeIcons = { urgent: '⚠️', event: '📅', info: 'ℹ️', maintenance: '🔧' };
+
+                if (window.AppAuth && window.supabaseClient) {
+                    const { error } = await window.AppAuth.createNotice({
+                        title: customTitle.trim(),
+                        content: customContent.trim(),
+                        type: customType
+                    });
+                    if (error) {
+                        alert(error.message || 'Failed to send notice');
+                        return;
+                    }
+
+                    await window.AppAuth.sendPushBroadcast({
+                        title: customTitle.trim(),
+                        message: customContent.trim() || customTitle.trim()
+                    });
+                }
 
                 const newNotice = {
                     id: Date.now(),
@@ -2526,7 +2656,18 @@
             // Mock current user email (in real app, get from auth)
             const currentUserEmail = mainAdmin;
 
-            const handleGenerateLink = () => {
+            const handleGenerateLink = async () => {
+                if (window.AppAuth && window.supabaseClient) {
+                    const { data, error } = await window.AppAuth.createAdminInviteLink(24);
+                    if (error) {
+                        alert(error.message || 'Failed to create invite link');
+                        return;
+                    }
+                    setInviteLink(data);
+                    setCopied(false);
+                    return;
+                }
+
                 const token = generateInviteToken();
                 const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
                 const link = `${baseUrl}auth.html?invite=${token}`;
@@ -2701,8 +2842,46 @@
             const { t, lang } = useLanguage();
             const [activeTab, setActiveTab] = useState('finance');
             const [showExpenseModal, setShowExpenseModal] = useState(false);
+            const [accessState, setAccessState] = useState('checking');
             const config = getConfig();
             const buildingName = lang === 'he' ? config.BUILDING_NAME : config.BUILDING_NAME_EN;
+
+            useEffect(() => {
+                const checkAdminAccess = async () => {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setAccessState('allowed');
+                        return;
+                    }
+
+                    const user = await window.AppAuth.getCurrentUser();
+                    if (!user) {
+                        window.location.href = 'auth.html';
+                        return;
+                    }
+
+                    const profile = await window.AppAuth.getUserProfile(user.id);
+                    if (!profile?.is_approved) {
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    if (!profile?.is_admin) {
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    setAccessState('allowed');
+                };
+                checkAdminAccess();
+            }, []);
+
+            if (accessState === 'checking') {
+                return (
+                    <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ color: 'var(--color-text-muted)' }}>Loading...</div>
+                    </div>
+                );
+            }
 
             const tabs = [
                 { id: 'finance', icon: '💰', label: t.tabs.finance },
@@ -2715,6 +2894,15 @@
                 { id: 'professionals', icon: '👷', label: t.tabs.professionals },
                 { id: 'marketplace', icon: '🛒', label: t.tabs.marketplace },
                 { id: 'admins', icon: '👑', label: t.tabs.admins }
+            ];
+
+            const quickActions = [
+                { id: 'notices', icon: '📢', label: lang === 'he' ? 'הודעות + פושים' : 'Notices + Push' },
+                { id: 'polls', icon: '📊', label: lang === 'he' ? 'סקרים' : 'Polls' },
+                { id: 'professionals', icon: '👷', label: lang === 'he' ? 'בעלי מקצוע' : 'Professionals' },
+                { id: 'marketplace', icon: '🛒', label: lang === 'he' ? 'לוח מודעות' : 'Marketplace' },
+                { id: 'faults', icon: '🔧', label: lang === 'he' ? 'תקלות' : 'Faults' },
+                { id: 'users', icon: '👥', label: lang === 'he' ? 'אישור דיירים' : 'Resident Approval' }
             ];
 
             return (
@@ -2751,6 +2939,38 @@
                             >
                                 {tab.icon} {tab.label}
                                 {tab.badge && <span className="tab-badge">{tab.badge}</span>}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                        gap: '10px',
+                        padding: '0 var(--space-lg) var(--space-md)'
+                    }}>
+                        {quickActions.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setActiveTab(item.id)}
+                                style={{
+                                    border: '1px solid var(--color-sand-dark)',
+                                    borderRadius: '14px',
+                                    background: activeTab === item.id ? 'var(--color-primary)' : 'white',
+                                    color: activeTab === item.id ? 'white' : 'var(--color-text)',
+                                    padding: '10px 12px',
+                                    fontFamily: 'var(--font-body)',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <span>{item.icon}</span>
+                                <span>{item.label}</span>
                             </button>
                         ))}
                     </div>

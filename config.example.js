@@ -20,5 +20,8 @@ window.APP_CONFIG = {
 
   // Invitation secret (used to generate secure invitation links)
   // Generate a random string for security
-  INVITATION_SECRET: "change-this-to-random-string"
+  INVITATION_SECRET: "change-this-to-random-string",
+
+  // Push notifications via OneSignal (optional)
+  ONESIGNAL_APP_ID: ""
 };

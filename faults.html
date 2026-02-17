@@ -6,10 +6,12 @@
     <meta name="theme-color" content="#D4785C">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>MyBuilding - תקלות</title>
+    <script src="/config.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/theme-boost.css">
 
     <style>
         :root {
@@ -731,6 +733,8 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext } = React;
@@ -856,7 +860,7 @@
         const TicketCard = ({ ticket, onClick }) => {
             const { t, lang } = useLanguage();
             const cat = categoryIcons[ticket.category];
-            const description = lang === 'he' ? ticket.description : ticket.descriptionEn;
+            const description = lang === 'he' ? ticket.description : (ticket.descriptionEn || ticket.description);
 
             return (
                 <div className={`ticket-card status-${ticket.status}`} onClick={onClick}>
@@ -875,7 +879,7 @@
                             {t.apartment} {ticket.apartment} • {ticket.date}
                         </span>
                         {ticket.hasImages && (
-                            <span className="ticket-image-indicator">📷 2</span>
+                            <span className="ticket-image-indicator">📷 {ticket.photosCount || 1}</span>
                         )}
                     </div>
                 </div>
@@ -1037,8 +1041,8 @@
             if (!ticket) return null;
 
             const cat = categoryIcons[ticket.category];
-            const description = lang === 'he' ? ticket.description : ticket.descriptionEn;
-            const location = lang === 'he' ? ticket.location : ticket.locationEn;
+            const description = lang === 'he' ? ticket.description : (ticket.descriptionEn || ticket.description);
+            const location = lang === 'he' ? ticket.location : (ticket.locationEn || ticket.location);
 
             const getTimelineLabel = (status) => {
                 if (status === 'opened') return t.detail.opened;
@@ -1097,8 +1101,9 @@
                                         {t.detail.photos}
                                     </h4>
                                     <div className="ticket-images">
-                                        <img className="ticket-image" src="https://picsum.photos/200/150?random=1" alt="" />
-                                        <img className="ticket-image" src="https://picsum.photos/200/150?random=2" alt="" />
+                                        {(ticket.photos || []).map((photoUrl, idx) => (
+                                            <img key={idx} className="ticket-image" src={photoUrl} alt="" />
+                                        ))}
                                     </div>
                                 </>
                             )}
@@ -1135,30 +1140,114 @@
             );
         };
 
+        const formatTicketDate = (value, lang) => {
+            if (!value) return '';
+            const locale = lang === 'he' ? 'he-IL' : 'en-US';
+            return new Date(value).toLocaleDateString(locale);
+        };
+
+        const formatTimelineDate = (value, lang) => {
+            const locale = lang === 'he' ? 'he-IL' : 'en-US';
+            return new Date(value).toLocaleString(locale, {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+
+        const toTicketModel = (fault, lang) => {
+            const faultPhotos = Array.isArray(fault.photos) ? fault.photos : [];
+            return {
+                id: fault.id,
+                category: fault.category,
+                description: fault.description,
+                location: fault.location || '',
+                status: fault.status || 'open',
+                apartment: fault.profiles?.apartment || '-',
+                date: formatTicketDate(fault.created_at, lang),
+                hasImages: faultPhotos.length > 0,
+                photos: faultPhotos,
+                photosCount: faultPhotos.length,
+                timeline: [{ status: 'opened', date: formatTimelineDate(fault.created_at, lang) }]
+            };
+        };
+
         const App = () => {
             const { t, lang, toggleLanguage } = useLanguage();
             const [activeTab, setActiveTab] = useState('all');
             const [showNewModal, setShowNewModal] = useState(false);
             const [selectedTicket, setSelectedTicket] = useState(null);
             const [tickets, setTickets] = useState(mockTickets);
+            const [isLoading, setIsLoading] = useState(true);
+            const [isSaving, setIsSaving] = useState(false);
+            const [currentUser, setCurrentUser] = useState(null);
+            const [currentProfile, setCurrentProfile] = useState(null);
+
+            const loadFaults = async (onlyMine = false) => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setIsLoading(false);
+                    return;
+                }
+                const { data, error } = await window.AppAuth.getFaults({ onlyMine });
+                if (error) {
+                    console.error('Failed loading faults', error);
+                    setIsLoading(false);
+                    return;
+                }
+                setTickets((data || []).map((fault) => toTicketModel(fault, lang)));
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                const bootstrap = async () => {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    const user = await window.AppAuth.getCurrentUser();
+                    if (!user) {
+                        window.location.href = 'auth.html';
+                        return;
+                    }
+
+                    const profile = await window.AppAuth.getUserProfile(user.id);
+                    if (!profile?.is_approved) {
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    setCurrentUser(user);
+                    setCurrentProfile(profile);
+                    await loadFaults(false);
+                };
+                bootstrap();
+            }, []);
 
             const filteredTickets = activeTab === 'myTickets'
-                ? tickets.filter(t => t.apartment === '12')
+                ? tickets.filter(t => String(t.apartment || '') === String(currentProfile?.apartment || ''))
                 : tickets;
 
             const openCount = tickets.filter(t => t.status === 'open').length;
 
-            const handleNewTicket = (data) => {
-                const newTicket = {
-                    id: tickets.length + 1,
-                    ...data,
-                    status: 'open',
-                    apartment: '12',
-                    date: new Date().toISOString().split('T')[0],
-                    hasImages: false,
-                    timeline: [{ status: 'opened', date: new Date().toLocaleString('he-IL') }]
-                };
-                setTickets([newTicket, ...tickets]);
+            const handleNewTicket = async (data) => {
+                if (!window.AppAuth) return;
+                setIsSaving(true);
+                const files = (data.photos || []).map((photo) => photo.file);
+                const { error } = await window.AppAuth.createFault({
+                    category: data.category,
+                    description: data.description,
+                    location: data.location,
+                    files
+                });
+                setIsSaving(false);
+
+                if (error) {
+                    alert(error.message || 'Failed to create fault');
+                    return;
+                }
+                await loadFaults(false);
             };
 
             return (
@@ -1166,7 +1255,7 @@
                     <header className="page-header">
                         <div className="header-row">
                             <h1 className="page-title">{t.title}</h1>
-                            <button className="header-action" onClick={() => setShowNewModal(true)}>
+                            <button className="header-action" onClick={() => setShowNewModal(true)} disabled={isSaving}>
                                 ➕
                             </button>
                         </div>
@@ -1189,7 +1278,12 @@
                     </div>
 
                     <main className="main-content">
-                        {filteredTickets.length === 0 ? (
+                        {isLoading ? (
+                            <div className="empty-state">
+                                <div className="empty-icon">⏳</div>
+                                <h3 className="empty-title">Loading...</h3>
+                            </div>
+                        ) : filteredTickets.length === 0 ? (
                             <div className="empty-state">
                                 <div className="empty-icon">✅</div>
                                 <h3 className="empty-title">{t.empty.title}</h3>
