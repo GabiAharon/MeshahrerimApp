@@ -1,23 +1,30 @@
-{
-  "name": "MyBuilding - ניהול בניין חכם",
-  "short_name": "MyBuilding",
-  "description": "אפליקציית ניהול בניין חכמה לדיירים וועד הבית",
-  "start_url": "/",
+﻿{
+  "name": "Meshahrerim 18",
+  "short_name": "Meshahrerim",
+  "description": "Resident app for building updates, notices, and fault management.",
+  "id": "/",
+  "start_url": "/index.html",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFF9F5",
-  "theme_color": "#D4785C",
+  "theme_color": "#2D5A4A",
   "lang": "he",
   "dir": "rtl",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23D4785C' width='512' height='512' rx='96'/><path fill='%23fff' d='M256 96l-128 96v192h80v-96h96v96h80V192z'/><circle fill='%23FFF9F5' cx='256' cy='240' r='24'/></svg>",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["lifestyle", "utilities"],
-  "screenshots": [],
+  "categories": ["utilities", "productivity"],
   "prefer_related_applications": false
 }
