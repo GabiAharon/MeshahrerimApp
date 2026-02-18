@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/icons/icon-192-v2.png" type="image/png">
-    <link rel="apple-touch-icon" href="/icons/icon-192-v2.png">
+    <link rel="icon" href="/icons/icon-192-v3.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icons/icon-192-v3.png">
     <title>MyBuilding - ניהול</title>
 
     <!-- Load config (contains admin emails - gitignored) -->
@@ -1442,6 +1442,9 @@
             const [extraApartmentsInput, setExtraApartmentsInput] = useState('');
             const [registeredApartments, setRegisteredApartments] = useState([]);
             const [summary, setSummary] = useState({ expected: 0, collected: 0, expenses: 0, balance: 0, paid: 0, debtors: 0, apartments: 0 });
+            const [paymentRows, setPaymentRows] = useState([]);
+            const [selectedFinanceApartments, setSelectedFinanceApartments] = useState([]);
+            const [financeBulkAmount, setFinanceBulkAmount] = useState(0);
             const [isSavingSettings, setIsSavingSettings] = useState(false);
             const [isSending, setIsSending] = useState(false);
             const currency = '\u20AA';
@@ -1482,6 +1485,19 @@
                 const extraOnly = sortApartments(fromSettings.filter((apt) => !fromUsers.includes(apt)));
 
                 const paymentMap = new Map((payments || []).map((p) => [String(p.apartment || '').trim(), p]));
+                const userByApartment = new Map((users || []).filter((u) => !u.is_admin).map((u) => [String(u.apartment || '').trim(), u]));
+                const mappedRows = all.map((apartment) => {
+                    const user = userByApartment.get(apartment);
+                    const payment = paymentMap.get(apartment);
+                    return {
+                        apartment,
+                        userId: user?.id || null,
+                        amount: Number(payment?.amount || 0)
+                    };
+                });
+
+                setPaymentRows(mappedRows);
+                setSelectedFinanceApartments((prev) => prev.filter((apt) => all.includes(apt)));
                 setRegisteredApartments(fromUsers);
                 setExtraApartmentsInput(extraOnly.join(', '));
                 setAnnualFee(Number(settings?.annual_fee || 0));
@@ -1585,6 +1601,39 @@
 
             const mergedCountPreview = uniqueApartments([...registeredApartments, ...parseApartments(extraApartmentsInput)]).length;
 
+            const updateFinanceSelection = (event) => {
+                const values = Array.from(event.target.selectedOptions).map((opt) => opt.value);
+                setSelectedFinanceApartments(values);
+            };
+
+            const applyAmountToFinanceSelection = (amount) => {
+                const normalized = Number(amount) || 0;
+                setPaymentRows((prev) => prev.map((row) => (
+                    selectedFinanceApartments.includes(row.apartment) ? { ...row, amount: normalized } : row
+                )));
+            };
+
+            const saveFinanceSelection = async () => {
+                if (!window.AppAuth || selectedFinanceApartments.length === 0) return;
+                const selectedRows = paymentRows.filter((row) => selectedFinanceApartments.includes(row.apartment));
+                for (const row of selectedRows) {
+                    const amount = Number(row.amount) || 0;
+                    const { error } = await window.AppAuth.setPaymentStatus({
+                        userId: row.userId,
+                        apartment: row.apartment,
+                        year,
+                        isPaid: amount > 0,
+                        amount
+                    });
+                    if (error) {
+                        alert(error.message || (lang === 'he' ? '\u05e9\u05de\u05d9\u05e8\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e0\u05db\u05e9\u05dc\u05d4' : 'Save failed'));
+                        return;
+                    }
+                }
+                await loadData();
+            };
+
+
             return (
                 <div className="finance-card">
                     <div className="finance-header">
@@ -1608,6 +1657,41 @@
 
                     <div style={{ marginBottom: '14px', color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>
                         {lang === 'he' ? `\u05e1\u05da \u05db\u05dc \u05d4\u05d3\u05d9\u05e8\u05d5\u05ea \u05e9\u05d9\u05e0\u05d5\u05d4\u05dc\u05d5: ${mergedCountPreview}` : `Total managed apartments: ${mergedCountPreview}`}
+                    </div>
+
+                    <div style={{ marginBottom: '12px', padding: '10px', border: '1px solid var(--color-sand-dark)', borderRadius: '12px', background: 'white' }}>
+                        <div style={{ marginBottom: '8px', fontWeight: 600 }}>
+                            {lang === 'he' ? '\u05d1\u05d7\u05d9\u05e8\u05d4 \u05de\u05e8\u05d5\u05d1\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05de\u05d9\u05dd' : 'Multi-select payments'}
+                        </div>
+                        <select multiple value={selectedFinanceApartments} onChange={updateFinanceSelection} className="form-input" style={{ minHeight: '110px', marginBottom: '8px' }}>
+                            {paymentRows.map((row) => (
+                                <option key={row.apartment} value={row.apartment}>
+                                    {`${row.apartment}  |  ${currency}${Number(row.amount || 0).toLocaleString()}`}
+                                </option>
+                            ))}
+                        </select>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                            <button className="reminder-btn" type="button" onClick={() => setSelectedFinanceApartments(paymentRows.map((r) => r.apartment))}>
+                                {lang === 'he' ? '\u05e1\u05de\u05df \u05d4\u05db\u05dc' : 'Select all'}
+                            </button>
+                            <button className="reminder-btn" type="button" onClick={() => setSelectedFinanceApartments([])}>
+                                {lang === 'he' ? '\u05e0\u05e7\u05d4 \u05d1\u05d7\u05d9\u05e8\u05d4' : 'Clear selection'}
+                            </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                            <input type="number" min="0" className="form-input" value={financeBulkAmount} onChange={(e) => setFinanceBulkAmount(Number(e.target.value) || 0)} placeholder={lang === 'he' ? '\u05e1\u05db\u05d5\u05dd \u05dc\u05e0\u05d1\u05d7\u05e8\u05d9\u05dd' : 'Amount for selected'} dir="ltr" />
+                            <button className="reminder-btn" type="button" onClick={() => applyAmountToFinanceSelection(financeBulkAmount)}>
+                                {lang === 'he' ? '\u05d4\u05d7\u05dc \u05e1\u05db\u05d5\u05dd' : 'Apply amount'}
+                            </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <button className="reminder-btn" type="button" onClick={() => applyAmountToFinanceSelection(annualFee)}>
+                                {lang === 'he' ? '\u05d4\u05d7\u05dc \u05ea\u05e9\u05dc\u05d5\u05dd \u05e7\u05d1\u05d5\u05e2' : 'Apply annual fee'}
+                            </button>
+                            <button className="btn-submit" type="button" onClick={saveFinanceSelection} disabled={selectedFinanceApartments.length === 0}>
+                                {lang === 'he' ? `\u05e9\u05de\u05d5\u05e8 \u05dc${selectedFinanceApartments.length} \u05d3\u05d9\u05e8\u05d5\u05ea` : `Save ${selectedFinanceApartments.length} selected`}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="balance-display"><div className="balance-label">{lang === 'he' ? '\u05d9\u05ea\u05e8\u05d4 \u05d1\u05e7\u05d5\u05e4\u05d4' : 'Balance'}</div><div className="balance-amount">{currency}{summary.balance.toLocaleString()}</div></div>

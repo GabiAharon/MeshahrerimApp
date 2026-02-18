@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mybuilding-cache-v6';
+const CACHE_NAME = 'mybuilding-cache-v7';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -13,8 +13,8 @@ const APP_SHELL = [
   '/supabase.js',
   '/push.js',
   '/pwa.js',
-  '/icons/icon-192-v2.png',
-  '/icons/icon-512-v2.png',
+  '/icons/icon-192-v3.png',
+  '/icons/icon-512-v3.png',
   '/icons/app-logo-cropped.png',
   '/icons/source-app-image.png'
 ];
