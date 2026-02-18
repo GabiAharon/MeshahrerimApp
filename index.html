@@ -161,6 +161,78 @@
             transform: translateY(-20px);
         }
 
+        .news-ticker {
+            margin: calc(var(--space-sm) * -1) 0 var(--space-lg);
+            border: 1px solid rgba(212, 120, 92, 0.25);
+            border-radius: var(--radius-md);
+            background: linear-gradient(90deg, rgba(255,255,255,0.95), rgba(255,245,238,0.95));
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .news-ticker-track {
+            display: flex;
+            width: max-content;
+            animation: tickerMove 26s linear infinite;
+            will-change: transform;
+        }
+
+        .news-ticker:hover .news-ticker-track {
+            animation-play-state: paused;
+        }
+
+        .news-ticker::before,
+        .news-ticker::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 24px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .news-ticker::before {
+            left: 0;
+            background: linear-gradient(90deg, rgba(255, 250, 246, 0.96), rgba(255, 250, 246, 0));
+        }
+
+        .news-ticker::after {
+            right: 0;
+            background: linear-gradient(270deg, rgba(255, 250, 246, 0.96), rgba(255, 250, 246, 0));
+        }
+
+        .news-ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text);
+            white-space: nowrap;
+        }
+
+        .news-ticker-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            flex: 0 0 auto;
+        }
+
+        @keyframes tickerMove {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .news-ticker-track {
+                animation: none;
+            }
+        }
+
         @keyframes slideDown {
             to {
                 opacity: 1;
@@ -1267,6 +1339,49 @@
             );
         };
 
+        const NoticesTicker = () => {
+            const { lang } = useLanguage();
+            const [items, setItems] = useState([]);
+
+            useEffect(() => {
+                let mounted = true;
+                let intervalId = null;
+
+                const loadTicker = async () => {
+                    if (!window.AppAuth || !window.supabaseClient) return;
+                    const { data, error } = await window.AppAuth.getActiveNotices();
+                    if (error) return;
+                    if (!mounted) return;
+                    setItems((data || []).slice(0, 8).map((n) => (n.title || '').trim()).filter(Boolean));
+                };
+
+                loadTicker();
+                intervalId = window.setInterval(loadTicker, 15000);
+
+                return () => {
+                    mounted = false;
+                    if (intervalId) window.clearInterval(intervalId);
+                };
+            }, []);
+
+            if (!items.length) return null;
+
+            const loopItems = [...items, ...items];
+
+            return (
+                <div className="news-ticker" aria-label={lang === 'he' ? 'עדכונים שוטפים' : 'Live notices ticker'}>
+                    <div className="news-ticker-track">
+                        {loopItems.map((text, idx) => (
+                            <span key={`${text}-${idx}`} className="news-ticker-item" dir={lang === 'he' ? 'rtl' : 'ltr'}>
+                                <span className="news-ticker-dot"></span>
+                                <span>{text}</span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         // Recent Notices Section
         const RecentNotices = () => {
             const { t } = useLanguage();
@@ -1501,6 +1616,7 @@
                     <div className="bg-pattern" />
                     <main className="main-content">
                         <WelcomeHeader />
+                        <NoticesTicker />
                         <PaymentCard />
                         <QuickActions />
                         <RecentNotices />
