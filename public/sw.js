@@ -1,4 +1,10 @@
-const CACHE_NAME = 'mybuilding-cache-v10';
+try {
+  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+} catch (error) {
+  // Keep app SW working even if OneSignal script is temporarily unavailable.
+}
+
+const CACHE_NAME = 'mybuilding-cache-v11';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -13,8 +19,6 @@ const APP_SHELL = [
   '/supabase.js',
   '/push.js',
   '/pwa.js',
-  '/onesignal/OneSignalSDKWorker.js',
-  '/onesignal/OneSignalSDKUpdaterWorker.js',
   '/icons/icon-192-v4.png',
   '/icons/icon-512-v4.png',
   '/icons/app-logo-cropped.png',

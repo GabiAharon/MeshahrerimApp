@@ -2,9 +2,9 @@
 (function () {
     const config = window.APP_CONFIG || {};
     const ONE_SIGNAL_APP_ID = config.ONESIGNAL_APP_ID || '';
-    const ONE_SIGNAL_SW_SCOPE = '/onesignal/';
-    const ONE_SIGNAL_SW_PATH = '/onesignal/OneSignalSDKWorker.js';
-    const ONE_SIGNAL_SW_UPDATER_PATH = '/onesignal/OneSignalSDKUpdaterWorker.js';
+    const ONE_SIGNAL_SW_SCOPE = '/';
+    const ONE_SIGNAL_SW_PATH = '/sw.js';
+    const ONE_SIGNAL_SW_UPDATER_PATH = '/sw.js';
 
     const state = {
         initialized: false,
