@@ -914,21 +914,26 @@
             const [isVoting, setIsVoting] = useState(false);
 
             const loadPolls = async () => {
-                if (!window.AppAuth || !window.supabaseClient) {
-                    setPolls([]);
-                    setIsLoading(false);
-                    return;
-                }
+                try {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setPolls([]);
+                        return;
+                    }
 
-                const { data, error } = await window.AppAuth.getPolls({ includeInactive: false });
-                if (error) {
-                    setPolls([]);
-                    setIsLoading(false);
-                    return;
-                }
+                    const { data, error } = await window.AppAuth.getPolls({ includeInactive: false });
+                    if (error) {
+                        console.error('Failed to load polls', error);
+                        setPolls([]);
+                        return;
+                    }
 
-                setPolls(data || []);
-                setIsLoading(false);
+                    setPolls(data || []);
+                } catch (error) {
+                    console.error('Failed to load polls', error);
+                    setPolls([]);
+                } finally {
+                    setIsLoading(false);
+                }
             };
 
             useEffect(() => {
@@ -1030,33 +1035,38 @@
             };
 
             const loadPros = async () => {
-                if (!window.AppAuth || !window.supabaseClient) {
+                try {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setPros([]);
+                        return;
+                    }
+
+                    const profile = await window.AppAuth.getCurrentProfile();
+                    const includeUnapproved = !!profile?.is_admin;
+                    const { data, error } = await window.AppAuth.getProfessionals({ includeUnapproved });
+                    if (error) {
+                        console.error('Failed to load professionals', error);
+                        setPros([]);
+                        return;
+                    }
+
+                    const mapped = (data || []).map((pro) => ({
+                        id: pro.id,
+                        name: pro.name,
+                        phone: pro.phone || '',
+                        description: pro.description || '',
+                        category: detectCategory(pro.profession),
+                        professionText: pro.profession || '',
+                        approved: !!pro.is_approved
+                    }));
+
+                    setPros(mapped);
+                } catch (error) {
+                    console.error('Failed to load professionals', error);
                     setPros([]);
+                } finally {
                     setIsLoading(false);
-                    return;
                 }
-
-                const profile = await window.AppAuth.getCurrentProfile();
-                const includeUnapproved = !!profile?.is_admin;
-                const { data, error } = await window.AppAuth.getProfessionals({ includeUnapproved });
-                if (error) {
-                    setPros([]);
-                    setIsLoading(false);
-                    return;
-                }
-
-                const mapped = (data || []).map((pro) => ({
-                    id: pro.id,
-                    name: pro.name,
-                    phone: pro.phone || '',
-                    description: pro.description || '',
-                    category: detectCategory(pro.profession),
-                    professionText: pro.profession || '',
-                    approved: !!pro.is_approved
-                }));
-
-                setPros(mapped);
-                setIsLoading(false);
             };
 
             useEffect(() => {
@@ -1120,21 +1130,26 @@
             };
 
             const loadItems = async () => {
-                if (!window.AppAuth || !window.supabaseClient) {
-                    setItems([]);
-                    setIsLoading(false);
-                    return;
-                }
+                try {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setItems([]);
+                        return;
+                    }
 
-                const { data, error } = await window.AppAuth.getMarketplaceItems({ includeInactive: false });
-                if (error) {
-                    setItems([]);
-                    setIsLoading(false);
-                    return;
-                }
+                    const { data, error } = await window.AppAuth.getMarketplaceItems({ includeInactive: false });
+                    if (error) {
+                        console.error('Failed to load marketplace', error);
+                        setItems([]);
+                        return;
+                    }
 
-                setItems(data || []);
-                setIsLoading(false);
+                    setItems(data || []);
+                } catch (error) {
+                    console.error('Failed to load marketplace', error);
+                    setItems([]);
+                } finally {
+                    setIsLoading(false);
+                }
             };
 
             useEffect(() => {
@@ -1213,22 +1228,27 @@
                 }
 
                 setIsSubmitting(true);
-                const { error } = await window.AppAuth.addProfessional({
-                    name: proName.trim(),
-                    profession: proCategory,
-                    phone: proPhone.trim(),
-                    description: proNote.trim()
-                });
-                setIsSubmitting(false);
+                try {
+                    const { error } = await window.AppAuth.addProfessional({
+                        name: proName.trim(),
+                        profession: proCategory,
+                        phone: proPhone.trim(),
+                        description: proNote.trim()
+                    });
 
-                if (error) {
-                    alert(error.message || (lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save'));
-                    return;
+                    if (error) {
+                        alert(error.message || (lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save'));
+                        return;
+                    }
+
+                    alert(lang === 'he' ? '\u05e0\u05e9\u05de\u05e8 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4. \u05d9\u05d5\u05e6\u05d2 \u05dc\u05d0\u05d7\u05e8 \u05d0\u05d9\u05e9\u05d5\u05e8 \u05de\u05e0\u05d4\u05dc.' : 'Saved successfully. It will appear after admin approval.');
+                    if (typeof onSaved === 'function') onSaved('pros');
+                    onClose();
+                } catch (error) {
+                    alert((lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save') + ': ' + (error?.message || 'Unknown error'));
+                } finally {
+                    setIsSubmitting(false);
                 }
-
-                alert(lang === 'he' ? '\u05e0\u05e9\u05de\u05e8 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4. \u05d9\u05d5\u05e6\u05d2 \u05dc\u05d0\u05d7\u05e8 \u05d0\u05d9\u05e9\u05d5\u05e8 \u05de\u05e0\u05d4\u05dc.' : 'Saved successfully. It will appear after admin approval.');
-                if (typeof onSaved === 'function') onSaved('pros');
-                onClose();
             };
 
             const handleMarketSubmit = async () => {
@@ -1239,23 +1259,28 @@
                 }
 
                 setIsSubmitting(true);
-                const { error } = await window.AppAuth.createMarketplaceItem({
-                    title: itemTitle.trim(),
-                    description: itemDesc.trim(),
-                    category: itemType,
-                    price: itemType === 'sell' ? Number(itemPrice) || 0 : null,
-                    files: itemFiles
-                });
-                setIsSubmitting(false);
+                try {
+                    const { error } = await window.AppAuth.createMarketplaceItem({
+                        title: itemTitle.trim(),
+                        description: itemDesc.trim(),
+                        category: itemType,
+                        price: itemType === 'sell' ? Number(itemPrice) || 0 : null,
+                        files: itemFiles
+                    });
 
-                if (error) {
-                    alert(error.message || (lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save'));
-                    return;
+                    if (error) {
+                        alert(error.message || (lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save'));
+                        return;
+                    }
+
+                    alert(lang === 'he' ? '\u05d4\u05de\u05d5\u05d3\u05e2\u05d4 \u05e4\u05d5\u05e8\u05e1\u05de\u05d4 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4' : 'Listing published successfully');
+                    if (typeof onSaved === 'function') onSaved('market');
+                    onClose();
+                } catch (error) {
+                    alert((lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save') + ': ' + (error?.message || 'Unknown error'));
+                } finally {
+                    setIsSubmitting(false);
                 }
-
-                alert(lang === 'he' ? '\u05d4\u05de\u05d5\u05d3\u05e2\u05d4 \u05e4\u05d5\u05e8\u05e1\u05de\u05d4 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4' : 'Listing published successfully');
-                if (typeof onSaved === 'function') onSaved('market');
-                onClose();
             };
 
             return (
@@ -1263,7 +1288,7 @@
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">{title}</h2>
-                            <button className="modal-close" onClick={onClose}>×</button>
+                            <button className="modal-close" onClick={onClose}>X</button>
                         </div>
                         <div className="modal-body">
                             {type === 'pros' ? (

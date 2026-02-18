@@ -2498,54 +2498,43 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [isLoading, setIsLoading] = useState(true);
 
             const loadPolls = async () => {
-                if (!window.AppAuth || !window.supabaseClient) {
+                try {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setPolls([]);
+                        return;
+                    }
+                    const { data, error } = await window.AppAuth.getPolls({ includeInactive: true });
+                    if (error) {
+                        console.error('Failed to load polls', error);
+                        setPolls([]);
+                        return;
+                    }
+                    setPolls(data || []);
+                } catch (error) {
+                    console.error('Failed to load polls', error);
                     setPolls([]);
+                } finally {
                     setIsLoading(false);
-                    return;
                 }
-                const { data, error } = await window.AppAuth.getPolls({ includeInactive: true });
-                if (error) {
-                    setPolls([]);
-                    setIsLoading(false);
-                    return;
-                }
-                setPolls(data || []);
-                setIsLoading(false);
             };
 
-            useEffect(() => {
-                loadPolls();
-            }, []);
+            useEffect(() => { loadPolls(); }, []);
 
-            const handleAddOption = () => {
-                if (options.length < 6) setOptions([...options, '']);
-            };
-
+            const handleAddOption = () => { if (options.length < 6) setOptions([...options, '']); };
             const handleOptionChange = (index, value) => {
                 const next = [...options];
                 next[index] = value;
                 setOptions(next);
             };
-
             const handleRemoveOption = (index) => {
-                if (options.length > 2) {
-                    setOptions(options.filter((_, i) => i !== index));
-                }
+                if (options.length > 2) setOptions(options.filter((_, i) => i !== index));
             };
 
             const handleCreatePoll = async () => {
                 const cleanOptions = options.map((opt) => opt.trim()).filter(Boolean);
                 if (!question.trim() || cleanOptions.length < 2) return;
-
-                const { error } = await window.AppAuth.createPoll({
-                    question: question.trim(),
-                    options: cleanOptions
-                });
-                if (error) {
-                    alert(error.message || 'Failed to create poll');
-                    return;
-                }
-
+                const { error } = await window.AppAuth.createPoll({ question: question.trim(), options: cleanOptions });
+                if (error) return alert(error.message || 'Failed to create poll');
                 setQuestion('');
                 setOptions(['', '']);
                 setShowForm(false);
@@ -2554,20 +2543,14 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
 
             const handleClosePoll = async (id) => {
                 const { error } = await window.AppAuth.closePoll(id);
-                if (error) {
-                    alert(error.message || 'Failed to close poll');
-                    return;
-                }
+                if (error) return alert(error.message || 'Failed to close poll');
                 loadPolls();
             };
 
             const handleDeletePoll = async (id) => {
-                if (!confirm(lang === 'he' ? '\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05ea \u05d4\u05e1\u05e7\u05e8?' : 'Delete this poll?')) return;
+                if (!confirm(lang === 'he' ? 'למחוק את הסקר?' : 'Delete this poll?')) return;
                 const { error } = await window.AppAuth.deletePoll(id);
-                if (error) {
-                    alert(error.message || 'Failed to delete poll');
-                    return;
-                }
+                if (error) return alert(error.message || 'Failed to delete poll');
                 loadPolls();
             };
 
@@ -2578,20 +2561,8 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                     <div className="admin-management-card">
                         <div className="admin-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>{t.polls.create}</span>
-                            <button
-                                onClick={() => setShowForm(!showForm)}
-                                style={{
-                                    background: showForm ? 'var(--color-primary)' : 'var(--color-sand)',
-                                    color: showForm ? 'white' : 'var(--color-text)',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-full)',
-                                    padding: 'var(--space-xs) var(--space-md)',
-                                    cursor: 'pointer',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600
-                                }}
-                            >
-                                {showForm ? (lang === 'he' ? '\u05e1\u05d2\u05d5\u05e8' : 'Close') : (lang === 'he' ? '\u05d4\u05d5\u05e1\u05e3' : 'Add')}
+                            <button onClick={() => setShowForm(!showForm)} style={{ background: showForm ? 'var(--color-primary)' : 'var(--color-sand)', color: showForm ? 'white' : 'var(--color-text)', border: 'none', borderRadius: 'var(--radius-full)', padding: 'var(--space-xs) var(--space-md)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                {showForm ? (lang === 'he' ? 'סגור' : 'Close') : (lang === 'he' ? 'הוסף' : 'Add')}
                             </button>
                         </div>
 
@@ -2599,109 +2570,43 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             <div style={{ marginTop: 'var(--space-md)' }}>
                                 <div className="form-group">
                                     <label className="form-label">{t.polls.question}</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        value={question}
-                                        onChange={(e) => setQuestion(e.target.value)}
-                                        placeholder={t.polls.placeholder}
-                                    />
+                                    <input type="text" className="form-input" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder={t.polls.placeholder} />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t.polls.options}</label>
                                     {options.map((opt, index) => (
                                         <div key={index} style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                value={opt}
-                                                onChange={(e) => handleOptionChange(index, e.target.value)}
-                                                placeholder={`${t.polls.optionPlaceholder} ${index + 1}`}
-                                                style={{ flex: 1 }}
-                                            />
-                                            {options.length > 2 && (
-                                                <button
-                                                    onClick={() => handleRemoveOption(index)}
-                                                    style={{
-                                                        background: 'var(--color-danger-bg)',
-                                                        color: 'var(--color-danger)',
-                                                        border: 'none',
-                                                        borderRadius: 'var(--radius-sm)',
-                                                        width: '40px',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    ?
-                                                </button>
-                                            )}
+                                            <input type="text" className="form-input" value={opt} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`${t.polls.optionPlaceholder} ${index + 1}`} style={{ flex: 1 }} />
+                                            {options.length > 2 && <button onClick={() => handleRemoveOption(index)} style={{ background: 'var(--color-danger-bg)', color: 'var(--color-danger)', border: 'none', borderRadius: 'var(--radius-sm)', width: '40px', cursor: 'pointer' }}>X</button>}
                                         </div>
                                     ))}
-                                    {options.length < 6 && (
-                                        <button
-                                            onClick={handleAddOption}
-                                            style={{
-                                                background: 'var(--color-sand)',
-                                                border: 'none',
-                                                borderRadius: 'var(--radius-sm)',
-                                                padding: 'var(--space-sm) var(--space-md)',
-                                                cursor: 'pointer',
-                                                fontSize: '0.8125rem'
-                                            }}
-                                        >
-                                            + {t.polls.addOption}
-                                        </button>
-                                    )}
+                                    {options.length < 6 && <button onClick={handleAddOption} style={{ background: 'var(--color-sand)', border: 'none', borderRadius: 'var(--radius-sm)', padding: 'var(--space-sm) var(--space-md)', cursor: 'pointer', fontSize: '0.8125rem' }}>+ {t.polls.addOption}</button>}
                                 </div>
-                                <button
-                                    className="btn-send-notice"
-                                    onClick={handleCreatePoll}
-                                    disabled={!question.trim() || options.filter((o) => o.trim()).length < 2}
-                                >
-                                    {t.polls.create}
-                                </button>
+                                <button className="btn-send-notice" onClick={handleCreatePoll} disabled={!question.trim() || options.filter((o) => o.trim()).length < 2}>{t.polls.create}</button>
                             </div>
                         )}
                     </div>
 
                     <div className="admin-management-card">
                         <div className="admin-section-title">{t.polls.active}</div>
-                        {isLoading ? (
-                            <div className="no-admins-message">Loading...</div>
-                        ) : activePolls.length === 0 ? (
-                            <div className="no-admins-message">{t.polls.empty}</div>
-                        ) : (
-                            activePolls.map((poll) => (
-                                <div key={poll.id} className="active-notice-card" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
-                                        <strong>{poll.question}</strong>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                            {new Date(poll.created_at).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')}
-                                        </span>
-                                    </div>
-                                    {(poll.options || []).map((opt) => (
-                                        <div
-                                            key={opt.id}
-                                            style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                padding: 'var(--space-xs) var(--space-sm)',
-                                                background: 'var(--color-sand)',
-                                                borderRadius: 'var(--radius-sm)',
-                                                marginBottom: 'var(--space-xs)',
-                                                fontSize: '0.875rem'
-                                            }}
-                                        >
-                                            <span>{opt.text}</span>
-                                            <span style={{ fontWeight: 600 }}>{opt.votes} {t.polls.votes}</span>
-                                        </div>
-                                    ))}
-                                    <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
-                                        <button className="btn-delete" onClick={() => handleClosePoll(poll.id)}>{t.polls.close}</button>
-                                        <button className="btn-delete" onClick={() => handleDeletePoll(poll.id)}>{t.polls.delete}</button>
-                                    </div>
+                        {isLoading ? <div className="no-admins-message">Loading...</div> : activePolls.length === 0 ? <div className="no-admins-message">{t.polls.empty}</div> : activePolls.map((poll) => (
+                            <div key={poll.id} className="active-notice-card" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+                                    <strong>{poll.question}</strong>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{new Date(poll.created_at).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')}</span>
                                 </div>
-                            ))
-                        )}
+                                {(poll.options || []).map((opt) => (
+                                    <div key={opt.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 'var(--space-xs) var(--space-sm)', background: 'var(--color-sand)', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-xs)', fontSize: '0.875rem' }}>
+                                        <span>{opt.text}</span>
+                                        <span style={{ fontWeight: 600 }}>{opt.votes} {t.polls.votes}</span>
+                                    </div>
+                                ))}
+                                <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
+                                    <button className="btn-delete" onClick={() => handleClosePoll(poll.id)}>{t.polls.close}</button>
+                                    <button className="btn-delete" onClick={() => handleDeletePoll(poll.id)}>{t.polls.delete}</button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
@@ -2716,61 +2621,35 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [formData, setFormData] = useState({ name: '', profession: 'plumber', phone: '', description: '' });
             const [isLoading, setIsLoading] = useState(true);
 
-            const professionIcons = {
-                plumber: '🔧',
-                electrician: '⚡',
-                handyman: '🛠',
-                cleaner: '🧹',
-                painter: '🎨',
-                locksmith: '🔑',
-                ac: '❄️',
-                other: '👷'
-            };
+            const professionIcons = { plumber: 'PL', electrician: 'EL', handyman: 'HN', cleaner: 'CL', painter: 'PT', locksmith: 'LK', ac: 'AC', other: 'OT' };
 
             const loadProfessionals = async () => {
-                if (!window.AppAuth || !window.supabaseClient) {
+                try {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setProfessionals([]);
+                        return;
+                    }
+                    const { data, error } = await window.AppAuth.getProfessionals({ includeUnapproved: true });
+                    if (error) {
+                        console.error('Failed to load professionals', error);
+                        setProfessionals([]);
+                        return;
+                    }
+                    setProfessionals((data || []).map((pro) => ({ id: pro.id, name: pro.name, profession: pro.profession, phone: pro.phone || '', description: pro.description || '', isApproved: !!pro.is_approved })));
+                } catch (error) {
+                    console.error('Failed to load professionals', error);
                     setProfessionals([]);
+                } finally {
                     setIsLoading(false);
-                    return;
                 }
-
-                const { data, error } = await window.AppAuth.getProfessionals({ includeUnapproved: true });
-                if (error) {
-                    setProfessionals([]);
-                    setIsLoading(false);
-                    return;
-                }
-
-                setProfessionals((data || []).map((pro) => ({
-                    id: pro.id,
-                    name: pro.name,
-                    profession: pro.profession,
-                    phone: pro.phone || '',
-                    description: pro.description || '',
-                    isApproved: !!pro.is_approved
-                })));
-                setIsLoading(false);
             };
 
-            useEffect(() => {
-                loadProfessionals();
-            }, []);
+            useEffect(() => { loadProfessionals(); }, []);
 
             const handleAddProfessional = async () => {
                 if (!formData.name.trim() || !formData.phone.trim()) return;
-
-                const { error } = await window.AppAuth.addProfessional({
-                    name: formData.name.trim(),
-                    profession: formData.profession,
-                    phone: formData.phone.trim(),
-                    description: formData.description.trim()
-                });
-
-                if (error) {
-                    alert(error.message || 'Failed to add professional');
-                    return;
-                }
-
+                const { error } = await window.AppAuth.addProfessional({ name: formData.name.trim(), profession: formData.profession, phone: formData.phone.trim(), description: formData.description.trim() });
+                if (error) return alert(error.message || 'Failed to add professional');
                 setFormData({ name: '', profession: 'plumber', phone: '', description: '' });
                 setShowForm(false);
                 loadProfessionals();
@@ -2778,120 +2657,61 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
 
             const handleApprove = async (id) => {
                 const { error } = await window.AppAuth.updateProfessionalApproval(id, true);
-                if (error) {
-                    alert(error.message || 'Failed to approve');
-                    return;
-                }
+                if (error) return alert(error.message || 'Failed to approve');
                 loadProfessionals();
             };
 
             const handleDelete = async (id) => {
-                if (!confirm(lang === 'he' ? '\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05d9\u05e9 \u05de\u05e7\u05e6\u05d5\u05e2?' : 'Delete professional?')) return;
+                if (!confirm(lang === 'he' ? 'למחוק איש מקצוע?' : 'Delete professional?')) return;
                 const { error } = await window.AppAuth.deleteProfessional(id);
-                if (error) {
-                    alert(error.message || 'Failed to delete');
-                    return;
-                }
+                if (error) return alert(error.message || 'Failed to delete');
                 loadProfessionals();
             };
 
-            const filteredPros = filter === 'all'
-                ? professionals
-                : filter === 'pending'
-                    ? professionals.filter((p) => !p.isApproved)
-                    : professionals.filter((p) => p.isApproved);
+            const filteredPros = filter === 'all' ? professionals : filter === 'pending' ? professionals.filter((p) => !p.isApproved) : professionals.filter((p) => p.isApproved);
 
             return (
                 <div>
                     <div className="admin-management-card">
                         <div className="admin-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>{t.professionals.add}</span>
-                            <button
-                                onClick={() => setShowForm(!showForm)}
-                                style={{
-                                    background: showForm ? 'var(--color-primary)' : 'var(--color-sand)',
-                                    color: showForm ? 'white' : 'var(--color-text)',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-full)',
-                                    padding: 'var(--space-xs) var(--space-md)',
-                                    cursor: 'pointer',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600
-                                }}
-                            >
-                                {showForm ? (lang === 'he' ? '\u05e1\u05d2\u05d5\u05e8' : 'Close') : (lang === 'he' ? '\u05d4\u05d5\u05e1\u05e3' : 'Add')}
+                            <button onClick={() => setShowForm(!showForm)} style={{ background: showForm ? 'var(--color-primary)' : 'var(--color-sand)', color: showForm ? 'white' : 'var(--color-text)', border: 'none', borderRadius: 'var(--radius-full)', padding: 'var(--space-xs) var(--space-md)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+                                {showForm ? (lang === 'he' ? 'סגור' : 'Close') : (lang === 'he' ? 'הוסף' : 'Add')}
                             </button>
                         </div>
 
                         {showForm && (
                             <div style={{ marginTop: 'var(--space-md)' }}>
-                                <div className="form-group">
-                                    <label className="form-label">{t.professionals.name}</label>
-                                    <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">{t.professionals.profession}</label>
-                                    <select
-                                        className="form-select"
-                                        value={formData.profession}
-                                        onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                                        style={{ width: '100%', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-sand-dark)' }}
-                                    >
-                                        {Object.keys(professionIcons).map((key) => (
-                                            <option key={key} value={key}>{professionIcons[key]} {t.professionals.professions[key] || key}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">{t.professionals.phone}</label>
-                                    <input type="tel" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} dir="ltr" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">{t.professionals.description}</label>
-                                    <textarea className="form-input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} style={{ resize: 'vertical' }} />
-                                </div>
-                                <button className="btn-send-notice" onClick={handleAddProfessional} disabled={!formData.name.trim() || !formData.phone.trim()}>
-                                    {t.professionals.add}
-                                </button>
+                                <div className="form-group"><label className="form-label">{t.professionals.name}</label><input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
+                                <div className="form-group"><label className="form-label">{t.professionals.profession}</label><select className="form-select" value={formData.profession} onChange={(e) => setFormData({ ...formData, profession: e.target.value })} style={{ width: '100%', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-sand-dark)' }}>{Object.keys(professionIcons).map((key) => (<option key={key} value={key}>{professionIcons[key]} {t.professionals.professions[key] || key}</option>))}</select></div>
+                                <div className="form-group"><label className="form-label">{t.professionals.phone}</label><input type="tel" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} dir="ltr" /></div>
+                                <div className="form-group"><label className="form-label">{t.professionals.description}</label><textarea className="form-input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} style={{ resize: 'vertical' }} /></div>
+                                <button className="btn-send-notice" onClick={handleAddProfessional} disabled={!formData.name.trim() || !formData.phone.trim()}>{t.professionals.add}</button>
                             </div>
                         )}
                     </div>
 
                     <div className="admin-management-card">
                         <div className="filter-pills" style={{ marginBottom: 'var(--space-md)' }}>
-                            <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-                                {lang === 'he' ? '\u05d4\u05db\u05dc' : 'All'} ({professionals.length})
-                            </button>
-                            <button className={`filter-pill ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>
-                                {t.professionals.pending} ({professionals.filter((p) => !p.isApproved).length})
-                            </button>
-                            <button className={`filter-pill ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>
-                                {t.professionals.approved} ({professionals.filter((p) => p.isApproved).length})
-                            </button>
+                            <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>{lang === 'he' ? 'הכל' : 'All'} ({professionals.length})</button>
+                            <button className={`filter-pill ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>{t.professionals.pending} ({professionals.filter((p) => !p.isApproved).length})</button>
+                            <button className={`filter-pill ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>{t.professionals.approved} ({professionals.filter((p) => p.isApproved).length})</button>
                         </div>
 
-                        {isLoading ? (
-                            <div className="no-admins-message">Loading...</div>
-                        ) : filteredPros.length === 0 ? (
-                            <div className="no-admins-message">{t.professionals.empty}</div>
-                        ) : (
-                            filteredPros.map((pro) => (
-                                <div key={pro.id} className="user-card">
-                                    <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
-                                        {professionIcons[pro.profession] || '👷'}
-                                    </div>
-                                    <div className="user-info">
-                                        <div className="user-name">{pro.name}</div>
-                                        <div className="user-details">{t.professionals.professions[pro.profession] || pro.profession} ? {pro.phone}</div>
-                                        {pro.description ? <div className="user-details">{pro.description}</div> : null}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                                        {!pro.isApproved && <button className="user-action-btn approve" onClick={() => handleApprove(pro.id)}>✓</button>}
-                                        <button className="user-action-btn reject" onClick={() => handleDelete(pro.id)}>??</button>
-                                    </div>
+                        {isLoading ? <div className="no-admins-message">Loading...</div> : filteredPros.length === 0 ? <div className="no-admins-message">{t.professionals.empty}</div> : filteredPros.map((pro) => (
+                            <div key={pro.id} className="user-card">
+                                <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>{professionIcons[pro.profession] || 'OT'}</div>
+                                <div className="user-info">
+                                    <div className="user-name">{pro.name}</div>
+                                    <div className="user-details">{t.professionals.professions[pro.profession] || pro.profession} ? {pro.phone}</div>
+                                    {pro.description ? <div className="user-details">{pro.description}</div> : null}
                                 </div>
-                            ))
-                        )}
+                                <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                    {!pro.isApproved && <button className="user-action-btn approve" onClick={() => handleApprove(pro.id)}>OK</button>}
+                                    <button className="user-action-btn reject" onClick={() => handleDelete(pro.id)}>DEL</button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
@@ -2904,60 +2724,41 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [filter, setFilter] = useState('all');
             const [isLoading, setIsLoading] = useState(true);
 
-            const categoryIcons = {
-                sell: '🛒',
-                buy: '🔎',
-                give: '🎁',
-                seek: '📣'
-            };
+            const categoryIcons = { sell: 'SELL', buy: 'BUY', give: 'GIVE', seek: 'SEEK' };
 
             const loadItems = async () => {
-                if (!window.AppAuth || !window.supabaseClient) {
+                try {
+                    if (!window.AppAuth || !window.supabaseClient) {
+                        setItems([]);
+                        return;
+                    }
+                    const { data, error } = await window.AppAuth.getMarketplaceItems({ includeInactive: true });
+                    if (error) {
+                        console.error('Failed to load marketplace admin', error);
+                        setItems([]);
+                        return;
+                    }
+                    setItems((data || []).map((item) => ({ id: item.id, title: item.title, category: item.category, price: item.price, isActive: !!item.is_active, userName: item.profiles?.full_name || '-', apartment: item.profiles?.apartment || '-', photos: item.photos || [] })));
+                } catch (error) {
+                    console.error('Failed to load marketplace admin', error);
                     setItems([]);
+                } finally {
                     setIsLoading(false);
-                    return;
                 }
-
-                const { data, error } = await window.AppAuth.getMarketplaceItems({ includeInactive: true });
-                if (error) {
-                    setItems([]);
-                    setIsLoading(false);
-                    return;
-                }
-
-                setItems((data || []).map((item) => ({
-                    id: item.id,
-                    title: item.title,
-                    category: item.category,
-                    price: item.price,
-                    isActive: !!item.is_active,
-                    userName: item.profiles?.full_name || '-',
-                    apartment: item.profiles?.apartment || '-',
-                    photos: item.photos || []
-                })));
-                setIsLoading(false);
             };
 
-            useEffect(() => {
-                loadItems();
-            }, []);
+            useEffect(() => { loadItems(); }, []);
 
             const handleDelete = async (id) => {
-                if (!confirm(lang === 'he' ? '\u05dc\u05de\u05d7\u05d5\u05e7 \u05de\u05d5\u05d3\u05e2\u05d4?' : 'Delete listing?')) return;
+                if (!confirm(lang === 'he' ? 'למחוק מודעה?' : 'Delete listing?')) return;
                 const { error } = await window.AppAuth.deleteMarketplaceItem(id);
-                if (error) {
-                    alert(error.message || 'Failed to delete listing');
-                    return;
-                }
+                if (error) return alert(error.message || 'Failed to delete listing');
                 loadItems();
             };
 
             const handleClose = async (id) => {
                 const { error } = await window.AppAuth.closeMarketplaceItem(id);
-                if (error) {
-                    alert(error.message || 'Failed to close listing');
-                    return;
-                }
+                if (error) return alert(error.message || 'Failed to close listing');
                 loadItems();
             };
 
@@ -2970,44 +2771,25 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         <div className="admin-section-title">{t.marketplace.title}</div>
 
                         <div className="filter-pills" style={{ marginBottom: 'var(--space-md)' }}>
-                            <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-                                {t.marketplace.all} ({items.length})
-                            </button>
-                            <button className={`filter-pill ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>
-                                {t.marketplace.active} ({items.filter((i) => i.isActive).length})
-                            </button>
-                            {Object.keys(categoryIcons).map((cat) => (
-                                <button key={cat} className={`filter-pill ${filter === cat ? 'active' : ''}`} onClick={() => setFilter(cat)}>
-                                    {categoryIcons[cat]} {t.marketplace[cat]}
-                                </button>
-                            ))}
+                            <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>{t.marketplace.all} ({items.length})</button>
+                            <button className={`filter-pill ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>{t.marketplace.active} ({items.filter((i) => i.isActive).length})</button>
+                            {Object.keys(categoryIcons).map((cat) => (<button key={cat} className={`filter-pill ${filter === cat ? 'active' : ''}`} onClick={() => setFilter(cat)}>{categoryIcons[cat]} {t.marketplace[cat]}</button>))}
                         </div>
 
-                        {isLoading ? (
-                            <div className="no-admins-message">Loading...</div>
-                        ) : filteredItems.length === 0 ? (
-                            <div className="no-admins-message">{t.marketplace.empty}</div>
-                        ) : (
-                            filteredItems.map((item) => (
-                                <div key={item.id} className="user-card">
-                                    <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
-                                        {categoryIcons[item.category] || '📌'}
-                                    </div>
-                                    <div className="user-info">
-                                        <div className="user-name">{item.title}</div>
-                                        <div className="user-details">
-                                            {(item.price !== null && item.price !== undefined) ? `₪${item.price} • ` : ''}
-                                            {t.marketplace.by} {item.userName} ({item.apartment})
-                                        </div>
-                                        {!item.isActive ? <div className="user-details">{lang === 'he' ? '\u05dc\u05d0 \u05e4\u05e2\u05d9\u05dc' : 'Inactive'}</div> : null}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                                        {item.isActive ? <button className="user-action-btn approve" style={{ width: 'auto', padding: '0 10px' }} onClick={() => handleClose(item.id)}>{lang === 'he' ? '\u05e1\u05d2\u05d5\u05e8' : 'Close'}</button> : null}
-                                        <button className="user-action-btn reject" onClick={() => handleDelete(item.id)}>??</button>
-                                    </div>
+                        {isLoading ? <div className="no-admins-message">Loading...</div> : filteredItems.length === 0 ? <div className="no-admins-message">{t.marketplace.empty}</div> : filteredItems.map((item) => (
+                            <div key={item.id} className="user-card">
+                                <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>{categoryIcons[item.category] || 'ITEM'}</div>
+                                <div className="user-info">
+                                    <div className="user-name">{item.title}</div>
+                                    <div className="user-details">{(item.price !== null && item.price !== undefined) ? `?${item.price} ? ` : ''}{t.marketplace.by} {item.userName} ({item.apartment})</div>
+                                    {!item.isActive ? <div className="user-details">{lang === 'he' ? 'לא פעיל' : 'Inactive'}</div> : null}
                                 </div>
-                            ))
-                        )}
+                                <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                    {item.isActive ? <button className="user-action-btn approve" style={{ width: 'auto', padding: '0 10px' }} onClick={() => handleClose(item.id)}>{lang === 'he' ? 'סגור' : 'Close'}</button> : null}
+                                    <button className="user-action-btn reject" onClick={() => handleDelete(item.id)}>DEL</button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
