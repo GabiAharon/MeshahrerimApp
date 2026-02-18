@@ -980,6 +980,21 @@
         // Empty notices - will be populated from database
         const mockNotices = [];
 
+        const getNoticeIcon = (type) => {
+            const icons = { urgent: '⚠️', event: '📅', maintenance: '🔧', info: 'ℹ️' };
+            return icons[type] || '📢';
+        };
+
+        const mapNoticeRow = (row) => ({
+            id: row.id,
+            type: row.type || 'info',
+            icon: getNoticeIcon(row.type),
+            title: { he: row.title || '', en: row.title || '' },
+            preview: { he: row.content || '', en: row.content || '' },
+            date: row.created_at || new Date().toISOString(),
+            isRead: false
+        });
+
         // ============================================
         // UTILITY FUNCTIONS
         // ============================================
@@ -1161,12 +1176,14 @@
         // Notice Card
         const NoticeCard = ({ notice }) => {
             const { t, lang } = useLanguage();
+            const title = typeof notice.title === 'string' ? notice.title : (notice.title?.[lang] || '');
+            const preview = typeof notice.preview === 'string' ? notice.preview : (notice.preview?.[lang] || '');
 
             return (
                 <article className={`notice-card ${!notice.isRead ? 'unread' : ''}`}>
                     <time className="notice-date">{formatDate(notice.date, lang)}</time>
-                    <h3 className="notice-title">{notice.title[lang]}</h3>
-                    <p className="notice-preview">{notice.preview[lang]}</p>
+                    <h3 className="notice-title">{title}</h3>
+                    <p className="notice-preview">{preview}</p>
                     <span className={`notice-type ${notice.type}`}>
                         {t.notices[notice.type]}
                     </span>
@@ -1177,6 +1194,31 @@
         // Recent Notices Section
         const RecentNotices = () => {
             const { t } = useLanguage();
+            const [notices, setNotices] = useState(mockNotices);
+
+            useEffect(() => {
+                let mounted = true;
+                let intervalId = null;
+
+                const loadNotices = async () => {
+                    if (!window.AppAuth || !window.supabaseClient) return;
+                    const { data, error } = await window.AppAuth.getActiveNotices();
+                    if (error) {
+                        console.error('Failed to load notices', error);
+                        return;
+                    }
+                    if (!mounted) return;
+                    setNotices((data || []).slice(0, 5).map(mapNoticeRow));
+                };
+
+                loadNotices();
+                intervalId = window.setInterval(loadNotices, 15000);
+
+                return () => {
+                    mounted = false;
+                    if (intervalId) window.clearInterval(intervalId);
+                };
+            }, []);
 
             return (
                 <section className="notices-section">
@@ -1187,14 +1229,14 @@
                             <Icons.ArrowRight />
                         </a>
                     </div>
-                    {mockNotices.length === 0 ? (
+                    {notices.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: 'var(--space-xl)', color: 'var(--color-text-muted)' }}>
                             <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}>📭</div>
                             <div>{t.notices.empty}</div>
                         </div>
                     ) : (
                         <div className="notices-scroll">
-                            {mockNotices.map(notice => (
+                            {notices.map(notice => (
                                 <NoticeCard key={notice.id} notice={notice} />
                             ))}
                         </div>

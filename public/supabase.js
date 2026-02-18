@@ -141,26 +141,22 @@
             const { client, error: clientError } = withClient();
             if (clientError) return { error: clientError };
 
-            const { data, error } = await client
+            const { error } = await client
                 .from('profiles')
                 .update({ is_approved: true })
-                .eq('id', userId)
-                .select()
-                .single();
-            return { data, error };
+                .eq('id', userId);
+            return { data: null, error };
         },
 
         async rejectUser(userId) {
             const { client, error: clientError } = withClient();
             if (clientError) return { error: clientError };
 
-            const { data, error } = await client
+            const { error } = await client
                 .from('profiles')
                 .update({ is_approved: false })
-                .eq('id', userId)
-                .select()
-                .single();
-            return { data, error };
+                .eq('id', userId);
+            return { data: null, error };
         },
 
         async getPendingUsers() {

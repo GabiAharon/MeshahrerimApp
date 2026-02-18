@@ -10,6 +10,7 @@
     <link rel="icon" href="/icons/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title>MyBuilding - הודעות</title>
+    <script src="/config.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -639,6 +640,8 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext } = React;
@@ -714,6 +717,28 @@
             event: '📅',
             info: 'ℹ️',
             maintenance: '🔧'
+        };
+
+        const mapNoticeRow = (row) => {
+            const title = row.title || '';
+            const content = row.content || '';
+
+            return {
+                id: row.id,
+                type: row.type || 'info',
+                icon: typeIcons[row.type] || '📢',
+                date: row.created_at || new Date().toISOString(),
+                title: { he: title, en: title },
+                preview: { he: content, en: content },
+                content: { he: content, en: content },
+                isRead: false,
+                eventDate: row.created_at || new Date().toISOString(),
+                eventTime: '',
+                eventLocation: { he: '', en: '' },
+                eventDuration: { he: '', en: '' },
+                userRsvp: null,
+                rsvp: { yes: 0, no: 0 }
+            };
         };
 
         // Components
@@ -903,6 +928,32 @@
             const [activeTab, setActiveTab] = useState('all');
             const [selectedNotice, setSelectedNotice] = useState(null);
             const [notices, setNotices] = useState(mockNotices);
+
+            useEffect(() => {
+                let mounted = true;
+                let intervalId = null;
+
+                const loadNotices = async () => {
+                    if (!window.AppAuth || !window.supabaseClient) return;
+
+                    const { data, error } = await window.AppAuth.getActiveNotices();
+                    if (error) {
+                        console.error('Failed to load notices', error);
+                        return;
+                    }
+
+                    if (!mounted) return;
+                    setNotices((data || []).map(mapNoticeRow));
+                };
+
+                loadNotices();
+                intervalId = window.setInterval(loadNotices, 15000);
+
+                return () => {
+                    mounted = false;
+                    if (intervalId) window.clearInterval(intervalId);
+                };
+            }, []);
 
             const unreadCount = notices.filter(n => !n.isRead).length;
 

@@ -70,6 +70,8 @@
             min-height: 100vh;
             min-height: 100dvh;
             line-height: 1.5;
+            overflow: hidden;
+            overscroll-behavior-y: none;
         }
         [dir="rtl"] { text-align: right; }
         #root { min-height: 100vh; min-height: 100dvh; }
@@ -81,6 +83,9 @@
             min-height: 100vh;
             min-height: 100dvh;
             position: relative;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Header */
