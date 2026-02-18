@@ -1439,7 +1439,8 @@
             const { lang } = useLanguage();
             const [year, setYear] = useState(new Date().getFullYear());
             const [annualFee, setAnnualFee] = useState(0);
-            const [apartmentsInput, setApartmentsInput] = useState('');
+            const [extraApartmentsInput, setExtraApartmentsInput] = useState('');
+            const [registeredApartments, setRegisteredApartments] = useState([]);
             const [summary, setSummary] = useState({ expected: 0, collected: 0, expenses: 0, balance: 0, paid: 0, debtors: 0, apartments: 0 });
             const [isSavingSettings, setIsSavingSettings] = useState(false);
             const [isSending, setIsSending] = useState(false);
@@ -1454,22 +1455,42 @@
                     .filter(Boolean);
             };
 
+            const sortApartments = (arr) => {
+                return [...arr].sort((a, b) => String(a).localeCompare(String(b), 'he', { numeric: true }));
+            };
+
+            const uniqueApartments = (arr) => {
+                return Array.from(new Set((arr || []).map((x) => String(x || '').trim()).filter(Boolean)));
+            };
+
             const loadData = async () => {
                 if (!window.AppAuth || !window.supabaseClient) return;
-                const [{ data: settings }, { data: payments }, { data: expenses }] = await Promise.all([
+                const [{ data: settings }, { data: users }, { data: payments }, { data: expenses }] = await Promise.all([
                     window.AppAuth.getFinanceSettings(),
+                    window.AppAuth.getAllUsers(),
                     window.AppAuth.getPaymentsForYear(year),
                     window.AppAuth.getExpenses()
                 ]);
 
-                const apartments = settings?.apartments || [];
-                setAnnualFee(Number(settings?.annual_fee || 0));
-                setApartmentsInput(apartments.join(', '));
+                const fromUsers = uniqueApartments(
+                    (users || [])
+                        .filter((u) => !u.is_admin)
+                        .map((u) => u.apartment)
+                );
 
+                const fromSettings = uniqueApartments(settings?.apartments || []);
+                const extraOnly = sortApartments(fromSettings.filter((apt) => !fromUsers.includes(apt)));
+
+                const allApartments = sortApartments(uniqueApartments([...fromUsers, ...fromSettings]));
                 const paymentMap = new Map((payments || []).map((p) => [String(p.apartment || '').trim(), p]));
-                const collected = apartments.reduce((acc, apartment) => acc + Number(paymentMap.get(apartment)?.amount || 0), 0);
-                const paid = apartments.filter((apartment) => Number(paymentMap.get(apartment)?.amount || 0) > 0).length;
-                const expected = apartments.length * (Number(settings?.annual_fee || 0));
+
+                setRegisteredApartments(sortApartments(fromUsers));
+                setExtraApartmentsInput(extraOnly.join(', '));
+                setAnnualFee(Number(settings?.annual_fee || 0));
+
+                const collected = allApartments.reduce((acc, apartment) => acc + Number(paymentMap.get(apartment)?.amount || 0), 0);
+                const paid = allApartments.filter((apartment) => Number(paymentMap.get(apartment)?.amount || 0) > 0).length;
+                const expected = allApartments.length * (Number(settings?.annual_fee || 0));
                 const expenseTotal = (expenses || []).reduce((acc, e) => acc + Number(e.amount || 0), 0);
 
                 setSummary({
@@ -1478,8 +1499,8 @@
                     expenses: expenseTotal,
                     balance: collected - expenseTotal,
                     paid,
-                    debtors: Math.max(apartments.length - paid, 0),
-                    apartments: apartments.length
+                    debtors: Math.max(allApartments.length - paid, 0),
+                    apartments: allApartments.length
                 });
             };
 
@@ -1491,10 +1512,11 @@
                 if (!window.AppAuth) return;
                 setIsSavingSettings(true);
 
-                const apartments = parseApartments(apartmentsInput);
+                const extraApartments = parseApartments(extraApartmentsInput);
+                const mergedApartments = sortApartments(uniqueApartments([...registeredApartments, ...extraApartments]));
                 const { error } = await window.AppAuth.saveFinanceSettings({
                     annualFee: Number(annualFee) || 0,
-                    apartments
+                    apartments: mergedApartments
                 });
 
                 setIsSavingSettings(false);
@@ -1563,10 +1585,12 @@
                 alert(lang === 'he' ? '\u05e0\u05e9\u05dc\u05d7 \u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9\u05dd \u05dc\u05d3\u05d9\u05d9\u05e8\u05d9\u05dd' : 'Finance update sent to residents');
             };
 
+            const mergedCountPreview = uniqueApartments([...registeredApartments, ...parseApartments(extraApartmentsInput)]).length;
+
             return (
                 <div className="finance-card">
                     <div className="finance-header">
-                        <h3 className="finance-title">{lang === 'he' ? '\u05d4\u05db\u05e0\u05e1\u05d4 \u05e6\u05e4\u05d5\u05d9\u05d4' : 'Finance Management'}</h3>
+                        <h3 className="finance-title">{lang === 'he' ? '\u05e0\u05d9\u05d4\u05d5\u05dc \u05db\u05e1\u05e4\u05d9\u05dd' : 'Finance Management'}</h3>
                         <span className="finance-period">{year}</span>
                     </div>
 
@@ -1593,13 +1617,33 @@
                         </button>
                     </div>
 
+                    <div style={{ marginBottom: '8px', color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>
+                        {lang === 'he'
+                            ? `\u05d3\u05d9\u05e8\u05d5\u05ea \u05de\u05d4\u05e8\u05d9\u05e9\u05d5\u05dd (\u05d0\u05d5\u05d8\u05d5\u05de\u05d8\u05d9): ${registeredApartments.length}`
+                            : `Apartments from user registrations (auto): ${registeredApartments.length}`}
+                    </div>
+
+                    <input
+                        className="form-input"
+                        style={{ marginBottom: '10px' }}
+                        value={registeredApartments.join(', ')}
+                        readOnly
+                        placeholder={lang === 'he' ? '\u05d8\u05e2\u05d9\u05e0\u05ea \u05d3\u05d9\u05e8\u05d5\u05ea...' : 'Loading apartments...'}
+                    />
+
                     <textarea
                         className="form-input"
-                        style={{ minHeight: '90px', marginBottom: '14px', resize: 'vertical' }}
-                        value={apartmentsInput}
-                        onChange={(e) => setApartmentsInput(e.target.value)}
-                        placeholder={lang === 'he' ? '\u05e8\u05e9\u05d9\u05de\u05ea \u05d3\u05d9\u05e8\u05d5\u05ea (\u05e4\u05e1\u05d9\u05e7 \u05d0\u05d5 \u05e9\u05d5\u05e8\u05d4 \u05d7\u05d3\u05e9\u05d4): 1,2,3...' : 'Apartment list (comma/new line): 1,2,3...'}
+                        style={{ minHeight: '90px', marginBottom: '8px', resize: 'vertical' }}
+                        value={extraApartmentsInput}
+                        onChange={(e) => setExtraApartmentsInput(e.target.value)}
+                        placeholder={lang === 'he' ? '\u05d4\u05d5\u05e1\u05e3 \u05d3\u05d9\u05e8\u05d5\u05ea \u05e0\u05d5\u05e1\u05e4\u05d5\u05ea \u05e9\u05d0\u05d9\u05e0\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea (\u05e4\u05e1\u05d9\u05e7 \u05d0\u05d5 \u05e9\u05d5\u05e8\u05d4 \u05d7\u05d3\u05e9\u05d4)' : 'Add extra apartments not registered (comma/new line)'}
                     />
+
+                    <div style={{ marginBottom: '14px', color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>
+                        {lang === 'he'
+                            ? `\u05e1\u05da \u05db\u05dc \u05d4\u05d3\u05d9\u05e8\u05d5\u05ea \u05e9\u05d9\u05e0\u05d5\u05d4\u05dc\u05d5: ${mergedCountPreview}`
+                            : `Total managed apartments: ${mergedCountPreview}`}
+                    </div>
 
                     <div className="balance-display">
                         <div className="balance-label">{lang === 'he' ? '\u05d9\u05ea\u05e8\u05d4 \u05d1\u05e7\u05d5\u05e4\u05d4' : 'Balance'}</div>
@@ -1629,6 +1673,9 @@
             const [year, setYear] = useState(new Date().getFullYear());
             const [rows, setRows] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
+            const [selectedApartments, setSelectedApartments] = useState({});
+            const [bulkAmount, setBulkAmount] = useState(0);
+            const [annualFee, setAnnualFee] = useState(0);
             const currency = '\u20AA';
 
             const loadRows = async () => {
@@ -1648,7 +1695,18 @@
                     return;
                 }
 
-                const apartmentList = (settings?.apartments || []).map((item) => String(item || '').trim()).filter(Boolean);
+                const fromUsers = Array.from(new Set(
+                    (users || [])
+                        .filter((u) => !u.is_admin)
+                        .map((u) => String(u.apartment || '').trim())
+                        .filter(Boolean)
+                ));
+                const fromSettings = Array.from(new Set((settings?.apartments || []).map((x) => String(x || '').trim()).filter(Boolean)));
+                const apartmentList = Array.from(new Set([...fromUsers, ...fromSettings]))
+                    .sort((a, b) => String(a).localeCompare(String(b), 'he', { numeric: true }));
+
+                setAnnualFee(Number(settings?.annual_fee || 0));
+
                 const apartmentUsers = new Map();
                 (users || [])
                     .filter((u) => !u.is_admin)
@@ -1665,14 +1723,16 @@
                     return {
                         apartment,
                         userId: resident?.id || null,
-                        name: resident?.full_name || resident?.email || (lang === 'he' ? '\u05dc\u05d0 \u05de\u05e9\u05d5\u05d9\u05da \u05dc\u05d3\u05d9\u05d9\u05e8' : 'Not linked to resident'),
+                        name: resident?.full_name || resident?.email || (lang === 'he' ? '\u05d3\u05d9\u05e8\u05d4 \u05dc\u05dc\u05d0 \u05de\u05e9\u05ea\u05de\u05e9 \u05e8\u05e9\u05d5\u05dd' : 'Apartment without registered user'),
                         paidAmount: Number(payment?.amount || 0),
                         isApproved: resident ? !!resident.is_approved : true
                     };
-                })
-                .sort((a, b) => String(a.apartment).localeCompare(String(b.apartment), 'he'));
+                });
 
                 setRows(mergedRows);
+                const selection = {};
+                mergedRows.forEach((row) => { selection[row.apartment] = false; });
+                setSelectedApartments(selection);
                 setIsLoading(false);
             };
 
@@ -1685,25 +1745,56 @@
                 setRows((prev) => prev.map((r) => (r.apartment === apartment ? { ...r, paidAmount: Number(value) || 0 } : r)));
             };
 
-            const handleSavePayment = async (row) => {
-                if (!window.AppAuth) return;
-                const amount = Number(row.paidAmount) || 0;
+            const toggleRow = (apartment) => {
+                setSelectedApartments((prev) => ({ ...prev, [apartment]: !prev[apartment] }));
+            };
 
-                const { error } = await window.AppAuth.setPaymentStatus({
-                    userId: row.userId,
-                    apartment: row.apartment,
-                    year,
-                    isPaid: amount > 0,
-                    amount
+            const setSelectAll = (value) => {
+                setSelectedApartments((prev) => {
+                    const next = { ...prev };
+                    Object.keys(next).forEach((key) => { next[key] = value; });
+                    return next;
                 });
+            };
 
-                if (error) {
-                    alert(error.message || (lang === 'he' ? '\u05e9\u05de\u05d9\u05e8\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e0\u05db\u05e9\u05dc\u05d4' : 'Save failed'));
-                    return;
+            const selectedRows = rows.filter((row) => selectedApartments[row.apartment]);
+
+            const applyBulkAmountLocally = (amount) => {
+                const normalized = Number(amount) || 0;
+                setRows((prev) => prev.map((row) => (
+                    selectedApartments[row.apartment] ? { ...row, paidAmount: normalized } : row
+                )));
+            };
+
+            const saveRows = async (targetRows) => {
+                if (!window.AppAuth || targetRows.length === 0) return;
+
+                for (const row of targetRows) {
+                    const amount = Number(row.paidAmount) || 0;
+                    const { error } = await window.AppAuth.setPaymentStatus({
+                        userId: row.userId,
+                        apartment: row.apartment,
+                        year,
+                        isPaid: amount > 0,
+                        amount
+                    });
+
+                    if (error) {
+                        alert(error.message || (lang === 'he' ? '\u05e9\u05de\u05d9\u05e8\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e0\u05db\u05e9\u05dc\u05d4' : 'Save failed'));
+                        return;
+                    }
                 }
 
                 await loadRows();
                 if (typeof onDataChanged === 'function') onDataChanged();
+            };
+
+            const handleSavePayment = async (row) => {
+                await saveRows([row]);
+            };
+
+            const handleSaveSelected = async () => {
+                await saveRows(selectedRows);
             };
 
             if (isLoading) return <div className="no-admins-message" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>{lang === 'he' ? '\u05d8\u05d5\u05e2\u05df...' : 'Loading...'}</div>;
@@ -1711,13 +1802,49 @@
 
             return (
                 <div>
-                    <div style={{ marginBottom: 'var(--space-md)' }}>
+                    <div style={{ marginBottom: 'var(--space-md)', display: 'grid', gap: '10px' }}>
                         <input type="number" min="2020" max="2100" value={year} onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())} className="form-input" placeholder={lang === 'he' ? '\u05e9\u05e0\u05d4' : 'Year'} />
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <button className="reminder-btn" onClick={() => setSelectAll(true)}>{lang === 'he' ? '\u05e1\u05de\u05df \u05d4\u05db\u05dc' : 'Select all'}</button>
+                            <button className="reminder-btn" onClick={() => setSelectAll(false)}>{lang === 'he' ? '\u05e0\u05e7\u05d4 \u05d1\u05d7\u05d9\u05e8\u05d4' : 'Clear selection'}</button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <input
+                                type="number"
+                                min="0"
+                                className="form-input"
+                                value={bulkAmount}
+                                onChange={(e) => setBulkAmount(Number(e.target.value) || 0)}
+                                dir="ltr"
+                                placeholder={lang === 'he' ? '\u05e1\u05db\u05d5\u05dd \u05dc\u05e0\u05d1\u05d7\u05e8\u05d9\u05dd' : 'Amount for selected'}
+                            />
+                            <button className="reminder-btn" onClick={() => applyBulkAmountLocally(bulkAmount)}>
+                                {lang === 'he' ? '\u05d4\u05d7\u05dc \u05e1\u05db\u05d5\u05dd \u05dc\u05e0\u05d1\u05d7\u05e8\u05d9\u05dd' : 'Apply amount to selected'}
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <button className="reminder-btn" onClick={() => applyBulkAmountLocally(annualFee)}>
+                                {lang === 'he' ? '\u05d4\u05d7\u05dc \u05ea\u05e9\u05dc\u05d5\u05dd \u05e9\u05e0\u05ea\u05d9 \u05e7\u05d1\u05d5\u05e2' : 'Apply annual fixed fee'}
+                            </button>
+                            <button className="btn-submit" onClick={handleSaveSelected} disabled={selectedRows.length === 0}>
+                                {lang === 'he' ? `\u05e9\u05de\u05d5\u05e8 \u05dc${selectedRows.length} \u05d3\u05d9\u05e8\u05d5\u05ea` : `Save ${selectedRows.length} selected`}
+                            </button>
+                        </div>
                     </div>
 
                     {rows.map((row) => (
                         <div key={row.apartment} className="debtor-card">
-                            <div className="debtor-avatar">??</div>
+                            <div style={{ paddingTop: '6px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!selectedApartments[row.apartment]}
+                                    onChange={() => toggleRow(row.apartment)}
+                                    aria-label={`select apartment ${row.apartment}`}
+                                />
+                            </div>
                             <div className="debtor-info">
                                 <div className="debtor-name">{row.name}</div>
                                 <div className="debtor-apartment">{lang === 'he' ? `\u05d3\u05d9\u05e8\u05d4 ${row.apartment}` : `Apartment ${row.apartment}`}</div>
@@ -1736,7 +1863,7 @@
             );
         };
 
-        const ExpensesSection = ({ onAdd, reloadToken }) => {
+const ExpensesSection = ({ onAdd, reloadToken }) => {
             const { t } = useLanguage();
             const [expenses, setExpenses] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
