@@ -1481,6 +1481,13 @@
             const [status, setStatus] = useState('owner');
             const [errors, setErrors] = useState({});
 
+            const normalizeIsraeliPhone = (value) => {
+                let digits = String(value || '').replace(/\D/g, '');
+                if (digits.startsWith('972')) digits = `0${digits.slice(3)}`;
+                return digits.slice(0, 10);
+            };
+            const isValidIsraeliPhone = (value) => /^05\d{8}$/.test(normalizeIsraeliPhone(value));
+
             const handleSubmit = (e) => {
                 e.preventDefault();
                 const newErrors = {};
@@ -1488,7 +1495,7 @@
                 if (fullName.trim().length < 2) {
                     newErrors.fullName = t.register.step2.errors.fullName;
                 }
-                if (phone.length < 9) {
+                if (!isValidIsraeliPhone(phone)) {
                     newErrors.phone = t.register.step2.errors.phone;
                 }
                 if (!apartment) {
@@ -1501,7 +1508,7 @@
                     onSubmit({
                         ...authData,
                         fullName,
-                        phone,
+                        phone: normalizeIsraeliPhone(phone),
                         apartment,
                         status
                     });
@@ -1549,7 +1556,10 @@
                                     className={`form-input ${errors.phone ? 'error' : ''}`}
                                     placeholder={t.register.step2.phonePlaceholder}
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    onChange={(e) => setPhone(normalizeIsraeliPhone(e.target.value))}
+                                    inputMode="numeric"
+                                    maxLength={10}
+                                    pattern="05[0-9]{8}"
                                     dir="ltr"
                                 />
                                 {errors.phone && <span className="form-error">{errors.phone}</span>}

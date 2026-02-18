@@ -2621,6 +2621,13 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [formData, setFormData] = useState({ name: '', profession: 'plumber', phone: '', description: '' });
             const [isLoading, setIsLoading] = useState(true);
 
+            const normalizeIsraeliPhone = (value) => {
+                let digits = String(value || '').replace(/\D/g, '');
+                if (digits.startsWith('972')) digits = `0${digits.slice(3)}`;
+                return digits.slice(0, 10);
+            };
+            const isValidIsraeliPhone = (value) => /^05\d{8}$/.test(normalizeIsraeliPhone(value));
+
             const professionIcons = { plumber: 'PL', electrician: 'EL', handyman: 'HN', cleaner: 'CL', painter: 'PT', locksmith: 'LK', ac: 'AC', other: 'OT' };
 
             const loadProfessionals = async () => {
@@ -2648,7 +2655,11 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
 
             const handleAddProfessional = async () => {
                 if (!formData.name.trim() || !formData.phone.trim()) return;
-                const { error } = await window.AppAuth.addProfessional({ name: formData.name.trim(), profession: formData.profession, phone: formData.phone.trim(), description: formData.description.trim() });
+                if (!isValidIsraeliPhone(formData.phone)) {
+                    alert(lang === 'he' ? 'יש להזין טלפון ישראלי תקין (10 ספרות, מתחיל ב-05)' : 'Please enter a valid Israeli mobile number');
+                    return;
+                }
+                const { error } = await window.AppAuth.addProfessional({ name: formData.name.trim(), profession: formData.profession, phone: normalizeIsraeliPhone(formData.phone), description: formData.description.trim() });
                 if (error) return alert(error.message || 'Failed to add professional');
                 setFormData({ name: '', profession: 'plumber', phone: '', description: '' });
                 setShowForm(false);
@@ -2684,7 +2695,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             <div style={{ marginTop: 'var(--space-md)' }}>
                                 <div className="form-group"><label className="form-label">{t.professionals.name}</label><input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
                                 <div className="form-group"><label className="form-label">{t.professionals.profession}</label><select className="form-select" value={formData.profession} onChange={(e) => setFormData({ ...formData, profession: e.target.value })} style={{ width: '100%', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-sand-dark)' }}>{Object.keys(professionIcons).map((key) => (<option key={key} value={key}>{professionIcons[key]} {t.professionals.professions[key] || key}</option>))}</select></div>
-                                <div className="form-group"><label className="form-label">{t.professionals.phone}</label><input type="tel" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} dir="ltr" /></div>
+                                <div className="form-group"><label className="form-label">{t.professionals.phone}</label><input type="tel" className="form-input" inputMode="numeric" maxLength={10} pattern="05[0-9]{8}" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: normalizeIsraeliPhone(e.target.value) })} dir="ltr" /></div>
                                 <div className="form-group"><label className="form-label">{t.professionals.description}</label><textarea className="form-input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} style={{ resize: 'vertical' }} /></div>
                                 <button className="btn-send-notice" onClick={handleAddProfessional} disabled={!formData.name.trim() || !formData.phone.trim()}>{t.professionals.add}</button>
                             </div>

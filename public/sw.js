@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mybuilding-cache-v8';
+const CACHE_NAME = 'mybuilding-cache-v9';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -46,9 +46,15 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const requestUrl = new URL(event.request.url);
+  const pathname = requestUrl.pathname || '';
   const isHtmlNavigation =
     event.request.mode === 'navigate' ||
     (event.request.headers.get('accept') || '').includes('text/html');
+  const isDynamicScript =
+    pathname === '/supabase.js' ||
+    pathname === '/config.js' ||
+    pathname === '/push.js' ||
+    pathname === '/pwa.js';
 
   // Always prefer network for HTML so production updates appear immediately.
   if (isHtmlNavigation) {
@@ -60,6 +66,19 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  if (isDynamicScript) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }

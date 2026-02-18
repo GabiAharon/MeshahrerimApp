@@ -1103,7 +1103,19 @@
                                     {pro.phone ? (
                                         <>
                                             <a className="pro-contact-btn phone" href={`tel:${pro.phone}`}>{t.pros.call}</a>
-                                            <a className="pro-contact-btn whatsapp" href={`https://wa.me/${pro.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">{t.pros.whatsapp}</a>
+                                            <a
+                                                className="pro-contact-btn whatsapp"
+                                                href={`https://wa.me/${(() => {
+                                                    const d = String(pro.phone || '').replace(/\D/g, '');
+                                                    if (d.startsWith('972')) return d;
+                                                    if (d.startsWith('0')) return `972${d.slice(1)}`;
+                                                    return d;
+                                                })()}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                {t.pros.whatsapp}
+                                            </a>
                                         </>
                                     ) : null}
                                 </div>
@@ -1195,6 +1207,15 @@
             const [itemFiles, setItemFiles] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
 
+            const normalizeIsraeliPhone = (value) => {
+                let digits = String(value || '').replace(/\D/g, '');
+                if (digits.startsWith('972')) digits = `0${digits.slice(3)}`;
+                if (digits.startsWith('00')) digits = digits.slice(2);
+                return digits.slice(0, 10);
+            };
+
+            const isValidIsraeliPhone = (value) => /^05\d{8}$/.test(normalizeIsraeliPhone(value));
+
             useEffect(() => {
                 if (!isOpen) {
                     setProName('');
@@ -1226,13 +1247,17 @@
                     alert(lang === 'he' ? '\u05e0\u05d0 \u05dc\u05d4\u05d6\u05d9\u05df \u05e9\u05dd \u05d1\u05e2\u05dc \u05de\u05e7\u05e6\u05d5\u05e2' : 'Please enter professional name');
                     return;
                 }
+                if (!isValidIsraeliPhone(proPhone)) {
+                    alert(lang === 'he' ? 'יש להזין טלפון ישראלי תקין (10 ספרות, מתחיל ב-05)' : 'Please enter a valid Israeli mobile number');
+                    return;
+                }
 
                 setIsSubmitting(true);
                 try {
                     const { error } = await window.AppAuth.addProfessional({
                         name: proName.trim(),
                         profession: proCategory,
-                        phone: proPhone.trim(),
+                        phone: normalizeIsraeliPhone(proPhone),
                         description: proNote.trim()
                     });
 
@@ -1299,7 +1324,16 @@
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.pros.proPhone}</label>
-                                        <input type="tel" className="form-input" dir="ltr" value={proPhone} onChange={(e) => setProPhone(e.target.value)} />
+                                        <input
+                                            type="tel"
+                                            className="form-input"
+                                            dir="ltr"
+                                            inputMode="numeric"
+                                            maxLength={10}
+                                            pattern="05[0-9]{8}"
+                                            value={proPhone}
+                                            onChange={(e) => setProPhone(normalizeIsraeliPhone(e.target.value))}
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.pros.proCategory}</label>

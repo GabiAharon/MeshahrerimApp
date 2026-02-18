@@ -514,6 +514,13 @@
             const [showEditModal, setShowEditModal] = useState(false);
             const [editForm, setEditForm] = useState({ full_name: '', phone: '' });
 
+            const normalizeIsraeliPhone = (value) => {
+                let digits = String(value || '').replace(/\D/g, '');
+                if (digits.startsWith('972')) digits = `0${digits.slice(3)}`;
+                return digits.slice(0, 10);
+            };
+            const isValidIsraeliPhone = (value) => /^05\d{8}$/.test(normalizeIsraeliPhone(value));
+
             useEffect(() => {
                 const loadProfile = async () => {
                     if (!window.AppAuth || !window.supabaseClient) {
@@ -557,10 +564,14 @@
                 if (!window.AppAuth || !window.supabaseClient) return;
                 const user = await window.AppAuth.getCurrentUser();
                 if (!user) return;
+                if (editForm.phone && !isValidIsraeliPhone(editForm.phone)) {
+                    alert(lang === 'he' ? 'יש להזין טלפון ישראלי תקין (10 ספרות, מתחיל ב-05)' : 'Please enter a valid Israeli mobile number');
+                    return;
+                }
 
                 const { data, error } = await window.AppAuth.updateMyProfile(user.id, {
                     full_name: editForm.full_name.trim(),
-                    phone: editForm.phone.trim() || null
+                    phone: normalizeIsraeliPhone(editForm.phone) || null
                 });
 
                 if (error) {
@@ -676,8 +687,11 @@
                                         type="tel"
                                         className="form-input"
                                         dir="ltr"
+                                        inputMode="numeric"
+                                        maxLength={10}
+                                        pattern="05[0-9]{8}"
                                         value={editForm.phone}
-                                        onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
+                                        onChange={(event) => setEditForm({ ...editForm, phone: normalizeIsraeliPhone(event.target.value) })}
                                     />
                                 </div>
                                 <div className="edit-actions">
