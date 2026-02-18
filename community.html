@@ -767,6 +767,9 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/supabase.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext } = React;
@@ -894,49 +897,86 @@
         const mockMarketItems = [];
 
         // Components
-        const VotingSection = () => {
+        const VotingSection = ({ reloadToken = 0 }) => {
             const { t, lang } = useLanguage();
-            const [polls, setPolls] = useState(mockPolls);
+            const [polls, setPolls] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [isVoting, setIsVoting] = useState(false);
 
-            const handleVote = (pollId, optionId) => {
-                setPolls(prev => prev.map(poll => {
-                    if (poll.id === pollId && !poll.userVote && poll.isActive) {
-                        return {
-                            ...poll,
-                            userVote: optionId,
-                            options: poll.options.map(opt =>
-                                opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
-                            )
-                        };
-                    }
-                    return poll;
-                }));
+            const loadPolls = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setPolls([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getPolls({ includeInactive: false });
+                if (error) {
+                    setPolls([]);
+                    setIsLoading(false);
+                    return;
+                }
+                setPolls(data || []);
+                setIsLoading(false);
             };
 
-            const getTotalVotes = (options) => options.reduce((sum, opt) => sum + opt.votes, 0);
+            useEffect(() => {
+                setIsLoading(true);
+                loadPolls();
+            }, [reloadToken]);
+
+            const handleVote = async (poll, optionId) => {
+                if (isVoting || poll.user_vote || !poll.is_active) return;
+                setIsVoting(true);
+                const { error } = await window.AppAuth.votePoll({ pollId: poll.id, optionId });
+                setIsVoting(false);
+                if (!error) {
+                    loadPolls();
+                }
+            };
+
+            const getTotalVotes = (options) => options.reduce((sum, opt) => sum + (opt.votes || 0), 0);
+
+            const formatDeadline = (dateStr) => {
+                if (!dateStr) return '-';
+                try {
+                    return new Date(dateStr).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US');
+                } catch (_e) {
+                    return dateStr;
+                }
+            };
+
+            if (isLoading) {
+                return <div className="no-admins-message">Loading...</div>;
+            }
+
+            if (!polls.length) {
+                return <div className="no-admins-message">{t.voting.empty}</div>;
+            }
 
             return (
                 <div>
-                    {polls.map(poll => {
-                        const total = getTotalVotes(poll.options);
-                        const hasVoted = !!poll.userVote;
+                    {polls.map((poll) => {
+                        const total = getTotalVotes(poll.options || []);
+                        const hasVoted = !!poll.user_vote;
 
                         return (
                             <div key={poll.id} className="poll-card">
-                                <span className={`poll-status ${poll.isActive ? 'active' : 'ended'}`}>
-                                    {poll.isActive ? `🗳️ ${t.voting.active}` : `✓ ${t.voting.ended}`}
+                                <span className={`poll-status ${poll.is_active ? 'active' : 'ended'}`}>
+                                    {poll.is_active ? `??? ${t.voting.active}` : `? ${t.voting.ended}`}
                                 </span>
-                                <h3 className="poll-question">{poll.question[lang]}</h3>
+                                <h3 className="poll-question">{poll.question}</h3>
                                 <div className="poll-options">
-                                    {poll.options.map(option => {
-                                        const percentage = total > 0 ? Math.round((option.votes / total) * 100) : 0;
-                                        const isSelected = poll.userVote === option.id;
+                                    {(poll.options || []).map((option) => {
+                                        const optionVotes = option.votes || 0;
+                                        const percentage = total > 0 ? Math.round((optionVotes / total) * 100) : 0;
+                                        const isSelected = poll.user_vote === option.id;
 
                                         return (
                                             <div
                                                 key={option.id}
-                                                className={`poll-option ${isSelected ? 'selected' : ''} ${hasVoted ? 'voted' : ''} ${!poll.isActive ? 'disabled' : ''}`}
-                                                onClick={() => handleVote(poll.id, option.id)}
+                                                className={`poll-option ${isSelected ? 'selected' : ''} ${hasVoted ? 'voted' : ''} ${!poll.is_active ? 'disabled' : ''}`}
+                                                onClick={() => handleVote(poll, option.id)}
                                             >
                                                 {hasVoted && (
                                                     <div
@@ -946,7 +986,7 @@
                                                 )}
                                                 <div className="poll-option-content">
                                                     <span className="poll-option-text">
-                                                        {isSelected && '✓ '}{option.text[lang]}
+                                                        {isSelected ? '? ' : ''}{option.text}
                                                     </span>
                                                     {hasVoted && (
                                                         <span className="poll-option-votes">{percentage}%</span>
@@ -957,9 +997,7 @@
                                     })}
                                 </div>
                                 <div className="poll-meta">
-                                    <span className="poll-deadline">
-                                        ⏰ {t.voting.deadline} {poll.deadline}
-                                    </span>
+                                    <span className="poll-deadline">? {t.voting.deadline} {formatDeadline(poll.ends_at)}</span>
                                     <span className="poll-total">{total} {t.voting.votes}</span>
                                 </div>
                             </div>
@@ -969,17 +1007,73 @@
             );
         };
 
-        const ProsSection = ({ onAdd }) => {
-            const { t, lang } = useLanguage();
+        const ProsSection = ({ reloadToken }) => {
+            const { t } = useLanguage();
             const [filter, setFilter] = useState('all');
+            const [pros, setPros] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
 
             const categories = ['all', 'plumber', 'electrician', 'cleaner', 'handyman', 'babysitter'];
-            const filteredPros = filter === 'all' ? mockPros : mockPros.filter(p => p.category === filter);
+
+            const detectCategory = (value) => {
+                const normalized = String(value || '').toLowerCase();
+                if (normalized.includes('plumb') || normalized.includes('אינסטל')) return 'plumber';
+                if (normalized.includes('elect') || normalized.includes('חשמל')) return 'electrician';
+                if (normalized.includes('clean') || normalized.includes('ניקיון')) return 'cleaner';
+                if (normalized.includes('handy') || normalized.includes('תחזוקה') || normalized.includes('שיפוץ')) return 'handyman';
+                if (normalized.includes('baby') || normalized.includes('בייבי')) return 'babysitter';
+                return 'all';
+            };
+
+            const loadPros = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setPros([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const profile = await window.AppAuth.getCurrentProfile();
+                const includeUnapproved = !!profile?.is_admin;
+                const { data, error } = await window.AppAuth.getProfessionals({ includeUnapproved });
+                if (error) {
+                    setPros([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const mapped = (data || []).map((pro) => ({
+                    id: pro.id,
+                    name: pro.name,
+                    phone: pro.phone || '',
+                    description: pro.description || '',
+                    category: detectCategory(pro.profession),
+                    professionText: pro.profession || '',
+                    approved: !!pro.is_approved
+                }));
+
+                setPros(mapped);
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                setIsLoading(true);
+                loadPros();
+            }, [reloadToken]);
+
+            const filteredPros = filter === 'all' ? pros : pros.filter((item) => item.category === filter);
+
+            if (isLoading) {
+                return <div className="no-admins-message">Loading...</div>;
+            }
+
+            if (filteredPros.length === 0) {
+                return <div className="no-admins-message">{t.pros.empty}</div>;
+            }
 
             return (
                 <div>
                     <div className="category-filter">
-                        {categories.map(cat => (
+                        {categories.map((cat) => (
                             <button
                                 key={cat}
                                 className={`filter-chip ${filter === cat ? 'active' : ''}`}
@@ -990,27 +1084,23 @@
                         ))}
                     </div>
 
-                    {filteredPros.map(pro => (
+                    {filteredPros.map((pro) => (
                         <div key={pro.id} className="pro-card">
-                            <div className="pro-avatar">{pro.icon}</div>
+                            <div className="pro-avatar">?</div>
                             <div className="pro-info">
                                 <div className="pro-header">
-                                    <span className="pro-name">{pro.name[lang]}</span>
-                                    <span className="pro-rating">
-                                        ⭐ {pro.rating} ({pro.reviews})
-                                    </span>
+                                    <span className="pro-name">{pro.name}</span>
+                                    {!pro.approved ? <span className="pro-rating">Pending</span> : null}
                                 </div>
-                                <div className="pro-category">{t.pros[pro.category]}</div>
-                                <div className="pro-recommendation">
-                                    👍 {t.pros.recommended} {pro.recommendedBy}
-                                </div>
+                                <div className="pro-category">{pro.professionText}</div>
+                                {pro.description ? <div className="pro-recommendation">{pro.description}</div> : null}
                                 <div className="pro-contact">
-                                    <button className="pro-contact-btn phone">
-                                        📞 {t.pros.call}
-                                    </button>
-                                    <button className="pro-contact-btn whatsapp">
-                                        💬 {t.pros.whatsapp}
-                                    </button>
+                                    {pro.phone ? (
+                                        <>
+                                            <a className="pro-contact-btn phone" href={`tel:${pro.phone}`}>📞 {t.pros.call}</a>
+                                            <a className="pro-contact-btn whatsapp" href={`https://wa.me/${pro.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">💬 {t.pros.whatsapp}</a>
+                                        </>
+                                    ) : null}
                                 </div>
                             </div>
                         </div>
@@ -1019,58 +1109,194 @@
             );
         };
 
-        const MarketSection = ({ onAdd }) => {
-            const { t, lang } = useLanguage();
+        const MarketSection = ({ reloadToken = 0 }) => {
+            const { t } = useLanguage();
+            const [items, setItems] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+
+            const typeLabel = (category) => {
+                const labels = {
+                    sell: t.market.sale || '??????',
+                    buy: t.market.buy || '???? ?????',
+                    give: t.market.free || '??????',
+                    seek: t.market.seek || '????'
+                };
+                return labels[category] || category;
+            };
+
+            const loadItems = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setItems([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getMarketplaceItems({ includeInactive: false });
+                if (error) {
+                    setItems([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                setItems(data || []);
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                setIsLoading(true);
+                loadItems();
+            }, [reloadToken]);
+
+            if (isLoading) {
+                return <div className="no-admins-message">Loading...</div>;
+            }
+
+            if (!items.length) {
+                return <div className="no-admins-message">{t.market.empty}</div>;
+            }
 
             return (
                 <div className="market-grid">
-                    {mockMarketItems.map(item => (
-                        <div key={item.id} className="market-card">
-                            <img src={item.image} alt="" className="market-image" />
-                            <div className="market-content">
-                                <span className={`market-type ${item.type}`}>
-                                    {t.market[item.type]}
-                                </span>
-                                <h3 className="market-title">{item.title[lang]}</h3>
-                                {item.type === 'sale' && (
-                                    <div className="market-price">₪{item.price}</div>
-                                )}
-                                <div className="market-meta">
-                                    📍 {t.market.apartment} {item.apartment}
+                    {items.map((item) => {
+                        const imageUrl = Array.isArray(item.photos) && item.photos.length ? item.photos[0] : null;
+                        const ownerApt = item.profiles?.apartment || '-';
+                        return (
+                            <div key={item.id} className="market-card">
+                                {imageUrl ? <img src={imageUrl} alt="" className="market-image" /> : null}
+                                <div className="market-content">
+                                    <span className={`market-type ${item.category || 'give'}`}>
+                                        {typeLabel(item.category)}
+                                    </span>
+                                    <h3 className="market-title">{item.title}</h3>
+                                    {item.category === 'sell' && item.price !== null && item.price !== undefined ? (
+                                        <div className="market-price">?{item.price}</div>
+                                    ) : null}
+                                    {item.description ? <div className="pro-recommendation">{item.description}</div> : null}
+                                    <div className="market-meta">?? {t.market.apartment} {ownerApt}</div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             );
         };
 
-        const AddModal = ({ type, isOpen, onClose }) => {
+        const AddModal = ({ type, isOpen, onClose, onSaved }) => {
             const { t, lang } = useLanguage();
+            const [proName, setProName] = useState('');
+            const [proPhone, setProPhone] = useState('');
+            const [proCategory, setProCategory] = useState('plumber');
+            const [proNote, setProNote] = useState('');
+
+            const [itemTitle, setItemTitle] = useState('');
+            const [itemDesc, setItemDesc] = useState('');
+            const [itemType, setItemType] = useState('give');
+            const [itemPrice, setItemPrice] = useState('');
+            const [itemFiles, setItemFiles] = useState([]);
+
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            useEffect(() => {
+                if (!isOpen) {
+                    setProName('');
+                    setProPhone('');
+                    setProCategory('plumber');
+                    setProNote('');
+                    setItemTitle('');
+                    setItemDesc('');
+                    setItemType('give');
+                    setItemPrice('');
+                    setItemFiles([]);
+                    setIsSubmitting(false);
+                }
+            }, [isOpen]);
 
             const title = type === 'pros' ? t.pros.addPro : t.market.addItem;
+
+            const ensureSupabase = () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    alert(lang === 'he' ? 'Supabase ?? ?????' : 'Supabase is not configured');
+                    return false;
+                }
+                return true;
+            };
+
+            const handleProsSubmit = async () => {
+                if (!ensureSupabase()) return;
+
+                if (!proName.trim()) {
+                    alert(lang === 'he' ? '?? ????? ?? ??? ?????' : 'Please enter professional name');
+                    return;
+                }
+
+                setIsSubmitting(true);
+                const { error } = await window.AppAuth.addProfessional({
+                    name: proName.trim(),
+                    profession: proCategory,
+                    phone: proPhone.trim(),
+                    description: proNote.trim()
+                });
+                setIsSubmitting(false);
+
+                if (error) {
+                    alert(error.message || (lang === 'he' ? '????? ?????' : 'Failed to save'));
+                    return;
+                }
+
+                alert(lang === 'he' ? '???? ??????. ??? ?????? ????? ???? ????? ????.' : 'Saved successfully. It will appear after admin approval.');
+                if (typeof onSaved === 'function') onSaved('pros');
+                onClose();
+            };
+
+            const handleMarketSubmit = async () => {
+                if (!ensureSupabase()) return;
+
+                if (!itemTitle.trim()) {
+                    alert(lang === 'he' ? '?? ????? ????? ??????' : 'Please enter a title');
+                    return;
+                }
+
+                setIsSubmitting(true);
+                const { error } = await window.AppAuth.createMarketplaceItem({
+                    title: itemTitle.trim(),
+                    description: itemDesc.trim(),
+                    category: itemType,
+                    price: itemType === 'sell' ? Number(itemPrice) || 0 : null,
+                    files: itemFiles
+                });
+                setIsSubmitting(false);
+
+                if (error) {
+                    alert(error.message || (lang === 'he' ? '????? ?????' : 'Failed to save'));
+                    return;
+                }
+
+                alert(lang === 'he' ? '?????? ?????? ??????' : 'Listing published successfully');
+                if (typeof onSaved === 'function') onSaved('market');
+                onClose();
+            };
 
             return (
                 <div className={`modal-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">{title}</h2>
-                            <button className="modal-close" onClick={onClose}>✕</button>
+                            <button className="modal-close" onClick={onClose}>?</button>
                         </div>
                         <div className="modal-body">
                             {type === 'pros' ? (
                                 <>
                                     <div className="form-group">
                                         <label className="form-label">{t.pros.proName}</label>
-                                        <input type="text" className="form-input" />
+                                        <input type="text" className="form-input" value={proName} onChange={(e) => setProName(e.target.value)} />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.pros.proPhone}</label>
-                                        <input type="tel" className="form-input" dir="ltr" />
+                                        <input type="tel" className="form-input" dir="ltr" value={proPhone} onChange={(e) => setProPhone(e.target.value)} />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.pros.proCategory}</label>
-                                        <select className="form-select">
+                                        <select className="form-select" value={proCategory} onChange={(e) => setProCategory(e.target.value)}>
                                             <option value="plumber">{t.pros.plumber}</option>
                                             <option value="electrician">{t.pros.electrician}</option>
                                             <option value="cleaner">{t.pros.cleaner}</option>
@@ -1080,32 +1306,50 @@
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.pros.proNote}</label>
-                                        <textarea className="form-textarea" />
+                                        <textarea className="form-textarea" value={proNote} onChange={(e) => setProNote(e.target.value)} />
                                     </div>
-                                    <button className="btn-submit">{t.pros.submit}</button>
+                                    <button className="btn-submit" onClick={handleProsSubmit} disabled={isSubmitting}>
+                                        {isSubmitting ? '...' : t.pros.submit}
+                                    </button>
                                 </>
                             ) : (
                                 <>
                                     <div className="form-group">
                                         <label className="form-label">{t.market.itemTitle}</label>
-                                        <input type="text" className="form-input" />
+                                        <input type="text" className="form-input" value={itemTitle} onChange={(e) => setItemTitle(e.target.value)} />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.market.itemDesc}</label>
-                                        <textarea className="form-textarea" />
+                                        <textarea className="form-textarea" value={itemDesc} onChange={(e) => setItemDesc(e.target.value)} />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{t.market.itemType}</label>
-                                        <select className="form-select">
-                                            <option value="free">{t.market.free}</option>
-                                            <option value="sale">{t.market.sale}</option>
+                                        <select className="form-select" value={itemType} onChange={(e) => setItemType(e.target.value)}>
+                                            <option value="give">{t.market.free || '??????'}</option>
+                                            <option value="sell">{t.market.sale || '??????'}</option>
+                                            <option value="seek">{t.market.seek || '????'}</option>
+                                            <option value="buy">{t.market.buy || '???? ?????'}</option>
                                         </select>
                                     </div>
+                                    {itemType === 'sell' ? (
+                                        <div className="form-group">
+                                            <label className="form-label">{t.market.itemPrice}</label>
+                                            <input type="number" className="form-input" dir="ltr" value={itemPrice} onChange={(e) => setItemPrice(e.target.value)} />
+                                        </div>
+                                    ) : null}
                                     <div className="form-group">
-                                        <label className="form-label">{t.market.itemPrice}</label>
-                                        <input type="number" className="form-input" dir="ltr" />
+                                        <label className="form-label">??????</label>
+                                        <input
+                                            type="file"
+                                            className="form-input"
+                                            multiple
+                                            accept="image/*"
+                                            onChange={(e) => setItemFiles(Array.from(e.target.files || []))}
+                                        />
                                     </div>
-                                    <button className="btn-submit">{t.market.submit}</button>
+                                    <button className="btn-submit" onClick={handleMarketSubmit} disabled={isSubmitting}>
+                                        {isSubmitting ? '...' : t.market.submit}
+                                    </button>
                                 </>
                             )}
                         </div>
@@ -1145,6 +1389,9 @@
             const { t } = useLanguage();
             const [activeSection, setActiveSection] = useState('voting');
             const [showAddModal, setShowAddModal] = useState(false);
+            const [prosReloadToken, setProsReloadToken] = useState(0);
+            const [pollsReloadToken, setPollsReloadToken] = useState(0);
+            const [marketReloadToken, setMarketReloadToken] = useState(0);
 
             const sections = [
                 { id: 'voting', icon: '🗳️', label: t.sections.voting },
@@ -1174,9 +1421,9 @@
                     </div>
 
                     <main className="main-content">
-                        {activeSection === 'voting' && <VotingSection />}
-                        {activeSection === 'pros' && <ProsSection />}
-                        {activeSection === 'market' && <MarketSection />}
+                        {activeSection === 'voting' && <VotingSection reloadToken={pollsReloadToken} />}
+                        {activeSection === 'pros' && <ProsSection reloadToken={prosReloadToken} />}
+                        {activeSection === 'market' && <MarketSection reloadToken={marketReloadToken} />}
                     </main>
 
                     {showAddButton && (
@@ -1191,6 +1438,11 @@
                         type={activeSection}
                         isOpen={showAddModal}
                         onClose={() => setShowAddModal(false)}
+                        onSaved={(type) => {
+                            if (type === 'pros') setProsReloadToken((v) => v + 1);
+                            if (type === 'market') setMarketReloadToken((v) => v + 1);
+                            if (type === 'polls') setPollsReloadToken((v) => v + 1);
+                        }}
                     />
                 </div>
             );

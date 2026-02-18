@@ -235,6 +235,51 @@
             margin-top: var(--space-xl);
         }
 
+        .edit-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+            padding: var(--space-md);
+        }
+
+        .edit-modal {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border: 1px solid var(--color-sand-dark);
+            border-radius: var(--radius-xl);
+            padding: var(--space-lg);
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
+        }
+
+        .edit-btn {
+            flex: 1;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .edit-btn.primary {
+            background: var(--color-primary);
+            color: #fff;
+        }
+
+        .edit-btn.secondary {
+            background: var(--color-sand);
+            color: var(--color-text);
+        }
+
         /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
@@ -418,7 +463,14 @@
         };
 
         const MenuItem = ({ icon, label, desc, href, iconClass, onClick }) => (
-            <a href={href || '#'} className="menu-item" onClick={onClick}>
+            <a
+                href={href || '#'}
+                className="menu-item"
+                onClick={(event) => {
+                    if (!href) event.preventDefault();
+                    if (onClick) onClick(event);
+                }}
+            >
                 <div className={`menu-icon ${iconClass || ''}`}>{icon}</div>
                 <div className="menu-content">
                     <div className="menu-label">{label}</div>
@@ -459,6 +511,8 @@
             const { t, lang, setLang } = useLanguage();
             const [userProfile, setUserProfile] = useState(emptyUser);
             const [isLoading, setIsLoading] = useState(true);
+            const [showEditModal, setShowEditModal] = useState(false);
+            const [editForm, setEditForm] = useState({ full_name: '', phone: '' });
 
             useEffect(() => {
                 const loadProfile = async () => {
@@ -477,6 +531,10 @@
                         return;
                     }
                     setUserProfile(profile);
+                    setEditForm({
+                        full_name: profile.full_name || '',
+                        phone: profile.phone || ''
+                    });
                     setIsLoading(false);
                 };
                 loadProfile();
@@ -488,6 +546,30 @@
                     await window.AppAuth.signOut();
                 }
                 window.location.href = 'auth.html';
+            };
+
+            const handleOpenEdit = (event) => {
+                event.preventDefault();
+                setShowEditModal(true);
+            };
+
+            const handleSaveEdit = async () => {
+                if (!window.AppAuth || !window.supabaseClient) return;
+                const user = await window.AppAuth.getCurrentUser();
+                if (!user) return;
+
+                const { data, error } = await window.AppAuth.updateMyProfile(user.id, {
+                    full_name: editForm.full_name.trim(),
+                    phone: editForm.phone.trim() || null
+                });
+
+                if (error) {
+                    alert(error.message || 'Failed to update profile');
+                    return;
+                }
+
+                setUserProfile(data || userProfile);
+                setShowEditModal(false);
             };
 
             if (isLoading) {
@@ -515,8 +597,7 @@
                         <div className="menu-section">
                             <h3 className="menu-title">{t.sections.account}</h3>
                             <div className="menu-card">
-                                <MenuItem icon="✏️" label={t.menu.editProfile} desc={t.menu.editProfileDesc} />
-                                <MenuItem icon="💳" label={t.menu.payments} desc={t.menu.paymentsDesc} />
+                                <MenuItem icon="✏️" label={t.menu.editProfile} desc={t.menu.editProfileDesc} onClick={handleOpenEdit} />
                                 <MenuItem icon="📋" label={t.menu.myFaults} desc={t.menu.myFaultsDesc} href="faults.html" />
                             </div>
                         </div>
@@ -576,6 +657,40 @@
                     </main>
 
                     <BottomNav />
+
+                    {showEditModal && (
+                        <div className="edit-modal-overlay" onClick={() => setShowEditModal(false)}>
+                            <div className="edit-modal" onClick={(event) => event.stopPropagation()}>
+                                <div className="form-group">
+                                    <label className="form-label">{lang === 'he' ? 'שם מלא' : 'Full Name'}</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={editForm.full_name}
+                                        onChange={(event) => setEditForm({ ...editForm, full_name: event.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{lang === 'he' ? 'טלפון' : 'Phone'}</label>
+                                    <input
+                                        type="tel"
+                                        className="form-input"
+                                        dir="ltr"
+                                        value={editForm.phone}
+                                        onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
+                                    />
+                                </div>
+                                <div className="edit-actions">
+                                    <button className="edit-btn secondary" onClick={() => setShowEditModal(false)}>
+                                        {lang === 'he' ? 'ביטול' : 'Cancel'}
+                                    </button>
+                                    <button className="edit-btn primary" onClick={handleSaveEdit}>
+                                        {lang === 'he' ? 'שמירה' : 'Save'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };

@@ -6,6 +6,7 @@
     const SUPABASE_URL = config.SUPABASE_URL || '';
     const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || '';
     const FAULT_PHOTOS_BUCKET = 'fault-photos';
+    const MARKETPLACE_PHOTOS_BUCKET = 'marketplace-photos';
 
     if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -167,6 +168,325 @@
                 .select('*')
                 .order('created_at', { ascending: false });
             return { data: result.data || [], error: result.error };
+        },
+
+        async getProfessionals({ includeUnapproved = false } = {}) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: [], error: clientError };
+
+            let query = client
+                .from('professionals')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (!includeUnapproved) {
+                query = query.eq('is_approved', true);
+            }
+
+            const { data, error } = await query;
+            return { data: data || [], error };
+        },
+
+        async updateProfessionalApproval(professionalId, isApproved) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const { data, error } = await client
+                .from('professionals')
+                .update({ is_approved: !!isApproved })
+                .eq('id', professionalId)
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async deleteProfessional(professionalId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { error: clientError };
+
+            const { error } = await client
+                .from('professionals')
+                .delete()
+                .eq('id', professionalId);
+            return { error };
+        },
+
+        async addProfessional({ name, profession, phone, description }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { data: null, error: { message: 'Not authenticated' } };
+
+            const profile = await this.getCurrentProfile();
+            if (!profile) {
+                return { data: null, error: { message: 'User profile not found' } };
+            }
+            if (!profile.is_admin && !profile.is_approved) {
+                return { data: null, error: { message: 'החשבון שלך עדיין ממתין לאישור מנהל' } };
+            }
+
+            const { data, error } = await client
+                .from('professionals')
+                .insert({
+                    name: String(name || '').trim(),
+                    profession: String(profession || '').trim(),
+                    phone: phone ? String(phone).trim() : null,
+                    description: description ? String(description).trim() : null,
+                    recommended_by: user.id,
+                    is_approved: !!profile?.is_admin
+                })
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async getPolls({ includeInactive = false } = {}) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: [], error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { data: [], error: { message: 'Not authenticated' } };
+
+            let pollQuery = client
+                .from('polls')
+                .select('id,question,options,is_active,ends_at,created_at')
+                .order('created_at', { ascending: false });
+
+            if (!includeInactive) {
+                pollQuery = pollQuery.eq('is_active', true);
+            }
+
+            const { data: polls, error: pollsError } = await pollQuery;
+            if (pollsError) return { data: [], error: pollsError };
+
+            const pollIds = (polls || []).map((p) => p.id);
+            if (pollIds.length === 0) return { data: [], error: null };
+
+            const { data: votes, error: votesError } = await client
+                .from('poll_votes')
+                .select('poll_id,option_id,user_id')
+                .in('poll_id', pollIds);
+
+            if (votesError) return { data: [], error: votesError };
+
+            const votesByPoll = {};
+            (votes || []).forEach((vote) => {
+                if (!votesByPoll[vote.poll_id]) votesByPoll[vote.poll_id] = [];
+                votesByPoll[vote.poll_id].push(vote);
+            });
+
+            const normalized = (polls || []).map((poll) => {
+                const voteRows = votesByPoll[poll.id] || [];
+                const optionCounts = {};
+                let userVote = null;
+
+                voteRows.forEach((vote) => {
+                    optionCounts[vote.option_id] = (optionCounts[vote.option_id] || 0) + 1;
+                    if (vote.user_id === user.id) userVote = vote.option_id;
+                });
+
+                const options = Array.isArray(poll.options)
+                    ? poll.options.map((option, index) => {
+                        const optionId = option.id || `opt_${index + 1}`;
+                        return {
+                            id: optionId,
+                            text: option.text || option.label || '',
+                            votes: optionCounts[optionId] || 0
+                        };
+                    })
+                    : [];
+
+                return {
+                    id: poll.id,
+                    question: poll.question,
+                    options,
+                    is_active: !!poll.is_active,
+                    ends_at: poll.ends_at,
+                    created_at: poll.created_at,
+                    user_vote: userVote
+                };
+            });
+
+            return { data: normalized, error: null };
+        },
+
+        async createPoll({ question, options = [], endsAt = null }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { data: null, error: { message: 'Not authenticated' } };
+
+            const normalizedOptions = (options || [])
+                .map((option, index) => ({
+                    id: `opt_${index + 1}`,
+                    text: String(option || '').trim()
+                }))
+                .filter((option) => option.text);
+
+            if (!String(question || '').trim() || normalizedOptions.length < 2) {
+                return { data: null, error: { message: 'Poll must have a question and at least 2 options' } };
+            }
+
+            const { data, error } = await client
+                .from('polls')
+                .insert({
+                    question: String(question).trim(),
+                    options: normalizedOptions,
+                    created_by: user.id,
+                    is_active: true,
+                    ends_at: endsAt || null
+                })
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async votePoll({ pollId, optionId }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { data: null, error: { message: 'Not authenticated' } };
+
+            const { data, error } = await client
+                .from('poll_votes')
+                .insert({
+                    poll_id: pollId,
+                    user_id: user.id,
+                    option_id: optionId
+                })
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async closePoll(pollId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const { data, error } = await client
+                .from('polls')
+                .update({ is_active: false })
+                .eq('id', pollId)
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async deletePoll(pollId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { error: clientError };
+
+            const { error } = await client
+                .from('polls')
+                .delete()
+                .eq('id', pollId);
+            return { error };
+        },
+
+        async uploadMarketplacePhotos(files, userId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: [], error: clientError };
+            if (!Array.isArray(files) || files.length === 0) return { data: [], error: null };
+
+            const uploadedUrls = [];
+            for (let i = 0; i < files.length; i += 1) {
+                const file = files[i];
+                const objectPath = buildPhotoPath(userId, file.name || `market_${i}.jpg`, i);
+                const { error } = await client.storage
+                    .from(MARKETPLACE_PHOTOS_BUCKET)
+                    .upload(objectPath, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (error) return { data: [], error };
+
+                const { data: publicData } = client.storage
+                    .from(MARKETPLACE_PHOTOS_BUCKET)
+                    .getPublicUrl(objectPath);
+                uploadedUrls.push(publicData.publicUrl);
+            }
+
+            return { data: uploadedUrls, error: null };
+        },
+
+        async getMarketplaceItems({ includeInactive = false } = {}) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: [], error: clientError };
+
+            let query = client
+                .from('marketplace')
+                .select('id,title,description,price,category,photos,is_active,created_at,user_id,profiles(full_name,apartment)')
+                .order('created_at', { ascending: false });
+
+            if (!includeInactive) {
+                query = query.eq('is_active', true);
+            }
+
+            const { data, error } = await query;
+            return { data: data || [], error };
+        },
+
+        async createMarketplaceItem({ title, description, category, price = null, files = [] }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { data: null, error: { message: 'Not authenticated' } };
+
+            const uploadResult = await this.uploadMarketplacePhotos(files || [], user.id);
+            if (uploadResult.error) return { data: null, error: uploadResult.error };
+
+            const payload = {
+                user_id: user.id,
+                title: String(title || '').trim(),
+                description: description ? String(description).trim() : null,
+                category: category || 'give',
+                price: category === 'sell' ? Number(price) || 0 : null,
+                photos: uploadResult.data,
+                is_active: true
+            };
+
+            const { data, error } = await client
+                .from('marketplace')
+                .insert(payload)
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async closeMarketplaceItem(itemId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const { data, error } = await client
+                .from('marketplace')
+                .update({ is_active: false })
+                .eq('id', itemId)
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async deleteMarketplaceItem(itemId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { error: clientError };
+
+            const { error } = await client
+                .from('marketplace')
+                .delete()
+                .eq('id', itemId);
+            return { error };
         },
 
         async getPaymentsForYear(year) {

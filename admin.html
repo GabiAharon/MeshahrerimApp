@@ -2490,17 +2490,36 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [showForm, setShowForm] = useState(false);
             const [question, setQuestion] = useState('');
             const [options, setOptions] = useState(['', '']);
+            const [isLoading, setIsLoading] = useState(true);
+
+            const loadPolls = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setPolls([]);
+                    setIsLoading(false);
+                    return;
+                }
+                const { data, error } = await window.AppAuth.getPolls({ includeInactive: true });
+                if (error) {
+                    setPolls([]);
+                    setIsLoading(false);
+                    return;
+                }
+                setPolls(data || []);
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                loadPolls();
+            }, []);
 
             const handleAddOption = () => {
-                if (options.length < 6) {
-                    setOptions([...options, '']);
-                }
+                if (options.length < 6) setOptions([...options, '']);
             };
 
             const handleOptionChange = (index, value) => {
-                const newOptions = [...options];
-                newOptions[index] = value;
-                setOptions(newOptions);
+                const next = [...options];
+                next[index] = value;
+                setOptions(next);
             };
 
             const handleRemoveOption = (index) => {
@@ -2509,41 +2528,48 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                 }
             };
 
-            const handleCreatePoll = () => {
-                if (!question.trim() || options.filter(o => o.trim()).length < 2) return;
+            const handleCreatePoll = async () => {
+                const cleanOptions = options.map((opt) => opt.trim()).filter(Boolean);
+                if (!question.trim() || cleanOptions.length < 2) return;
 
-                const newPoll = {
-                    id: Date.now(),
+                const { error } = await window.AppAuth.createPoll({
                     question: question.trim(),
-                    options: options.filter(o => o.trim()).map((text, i) => ({
-                        id: `opt_${i}`,
-                        text,
-                        votes: 0
-                    })),
-                    isActive: true,
-                    totalVotes: 0,
-                    createdAt: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
-                };
+                    options: cleanOptions
+                });
+                if (error) {
+                    alert(error.message || 'Failed to create poll');
+                    return;
+                }
 
-                setPolls([newPoll, ...polls]);
                 setQuestion('');
                 setOptions(['', '']);
                 setShowForm(false);
+                loadPolls();
             };
 
-            const handleClosePoll = (id) => {
-                setPolls(polls.map(p => p.id === id ? { ...p, isActive: false } : p));
-            };
-
-            const handleDeletePoll = (id) => {
-                if (confirm(lang === 'he' ? 'למחוק ת הסקר?' : 'Delete this poll?')) {
-                    setPolls(polls.filter(p => p.id !== id));
+            const handleClosePoll = async (id) => {
+                const { error } = await window.AppAuth.closePoll(id);
+                if (error) {
+                    alert(error.message || 'Failed to close poll');
+                    return;
                 }
+                loadPolls();
             };
+
+            const handleDeletePoll = async (id) => {
+                if (!confirm(lang === 'he' ? '????? ?? ?????' : 'Delete this poll?')) return;
+                const { error } = await window.AppAuth.deletePoll(id);
+                if (error) {
+                    alert(error.message || 'Failed to delete poll');
+                    return;
+                }
+                loadPolls();
+            };
+
+            const activePolls = polls.filter((p) => p.is_active);
 
             return (
                 <div>
-                    {/* Create Poll Form */}
                     <div className="admin-management-card">
                         <div className="admin-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>{t.polls.create}</span>
@@ -2560,7 +2586,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     fontWeight: 600
                                 }}
                             >
-                                {showForm ? '✕' : '➕'}
+                                {showForm ? '?' : '?'}
                             </button>
                         </div>
 
@@ -2600,7 +2626,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                                         cursor: 'pointer'
                                                     }}
                                                 >
-                                                    ✕
+                                                    ?
                                                 </button>
                                             )}
                                         </div>
@@ -2617,54 +2643,56 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                                 fontSize: '0.8125rem'
                                             }}
                                         >
-                                            ➕ {t.polls.addOption}
+                                            ? {t.polls.addOption}
                                         </button>
                                     )}
                                 </div>
                                 <button
                                     className="btn-send-notice"
                                     onClick={handleCreatePoll}
-                                    disabled={!question.trim() || options.filter(o => o.trim()).length < 2}
+                                    disabled={!question.trim() || options.filter((o) => o.trim()).length < 2}
                                 >
-                                    📊 {t.polls.create}
+                                    ?? {t.polls.create}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    {/* Active Polls */}
                     <div className="admin-management-card">
                         <div className="admin-section-title">{t.polls.active}</div>
-                        {polls.filter(p => p.isActive).length === 0 ? (
+                        {isLoading ? (
+                            <div className="no-admins-message">Loading...</div>
+                        ) : activePolls.length === 0 ? (
                             <div className="no-admins-message">{t.polls.empty}</div>
                         ) : (
-                            polls.filter(p => p.isActive).map(poll => (
+                            activePolls.map((poll) => (
                                 <div key={poll.id} className="active-notice-card" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
                                         <strong>{poll.question}</strong>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{poll.createdAt}</span>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                            {new Date(poll.created_at).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')}
+                                        </span>
                                     </div>
-                                    {poll.options.map(opt => (
-                                        <div key={opt.id} style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            padding: 'var(--space-xs) var(--space-sm)',
-                                            background: 'var(--color-sand)',
-                                            borderRadius: 'var(--radius-sm)',
-                                            marginBottom: 'var(--space-xs)',
-                                            fontSize: '0.875rem'
-                                        }}>
+                                    {(poll.options || []).map((opt) => (
+                                        <div
+                                            key={opt.id}
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                padding: 'var(--space-xs) var(--space-sm)',
+                                                background: 'var(--color-sand)',
+                                                borderRadius: 'var(--radius-sm)',
+                                                marginBottom: 'var(--space-xs)',
+                                                fontSize: '0.875rem'
+                                            }}
+                                        >
                                             <span>{opt.text}</span>
                                             <span style={{ fontWeight: 600 }}>{opt.votes} {t.polls.votes}</span>
                                         </div>
                                     ))}
                                     <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-sm)' }}>
-                                        <button className="btn-delete" onClick={() => handleClosePoll(poll.id)}>
-                                            {t.polls.close}
-                                        </button>
-                                        <button className="btn-delete" onClick={() => handleDeletePoll(poll.id)}>
-                                            {t.polls.delete}
-                                        </button>
+                                        <button className="btn-delete" onClick={() => handleClosePoll(poll.id)}>{t.polls.close}</button>
+                                        <button className="btn-delete" onClick={() => handleDeletePoll(poll.id)}>{t.polls.delete}</button>
                                     </div>
                                 </div>
                             ))
@@ -2681,52 +2709,95 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [filter, setFilter] = useState('all');
             const [showForm, setShowForm] = useState(false);
             const [formData, setFormData] = useState({ name: '', profession: 'plumber', phone: '', description: '' });
+            const [isLoading, setIsLoading] = useState(true);
 
             const professionIcons = {
-                plumber: '🔧',
-                electrician: '⚡',
-                handyman: '🛠',
-                cleaner: '🧹',
-                painter: '🎨',
-                locksmith: '🔑',
-                ac: '',
-                other: '👷'
+                plumber: '??',
+                electrician: '?',
+                handyman: '??',
+                cleaner: '??',
+                painter: '??',
+                locksmith: '??',
+                ac: '??',
+                other: '??'
             };
 
-            const handleAddProfessional = () => {
+            const loadProfessionals = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setProfessionals([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getProfessionals({ includeUnapproved: true });
+                if (error) {
+                    setProfessionals([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                setProfessionals((data || []).map((pro) => ({
+                    id: pro.id,
+                    name: pro.name,
+                    profession: pro.profession,
+                    phone: pro.phone || '',
+                    description: pro.description || '',
+                    isApproved: !!pro.is_approved
+                })));
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                loadProfessionals();
+            }, []);
+
+            const handleAddProfessional = async () => {
                 if (!formData.name.trim() || !formData.phone.trim()) return;
 
-                const newPro = {
-                    id: Date.now(),
-                    ...formData,
-                    isApproved: true, // Admin adds directly as approved
-                    rating: 0,
-                    ratingCount: 0,
-                    createdAt: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
-                };
+                const { error } = await window.AppAuth.addProfessional({
+                    name: formData.name.trim(),
+                    profession: formData.profession,
+                    phone: formData.phone.trim(),
+                    description: formData.description.trim()
+                });
 
-                setProfessionals([newPro, ...professionals]);
+                if (error) {
+                    alert(error.message || 'Failed to add professional');
+                    return;
+                }
+
                 setFormData({ name: '', profession: 'plumber', phone: '', description: '' });
                 setShowForm(false);
+                loadProfessionals();
             };
 
-            const handleApprove = (id) => {
-                setProfessionals(professionals.map(p => p.id === id ? { ...p, isApproved: true } : p));
-            };
-
-            const handleDelete = (id) => {
-                if (confirm(lang === 'he' ? 'למחוק?' : 'Delete?')) {
-                    setProfessionals(professionals.filter(p => p.id !== id));
+            const handleApprove = async (id) => {
+                const { error } = await window.AppAuth.updateProfessionalApproval(id, true);
+                if (error) {
+                    alert(error.message || 'Failed to approve');
+                    return;
                 }
+                loadProfessionals();
             };
 
-            const filteredPros = filter === 'all' ? professionals :
-                filter === 'pending' ? professionals.filter(p => !p.isApproved) :
-                professionals.filter(p => p.isApproved);
+            const handleDelete = async (id) => {
+                if (!confirm(lang === 'he' ? '??????' : 'Delete?')) return;
+                const { error } = await window.AppAuth.deleteProfessional(id);
+                if (error) {
+                    alert(error.message || 'Failed to delete');
+                    return;
+                }
+                loadProfessionals();
+            };
+
+            const filteredPros = filter === 'all'
+                ? professionals
+                : filter === 'pending'
+                    ? professionals.filter((p) => !p.isApproved)
+                    : professionals.filter((p) => p.isApproved);
 
             return (
                 <div>
-                    {/* Add Professional Form */}
                     <div className="admin-management-card">
                         <div className="admin-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>{t.professionals.add}</span>
@@ -2743,7 +2814,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     fontWeight: 600
                                 }}
                             >
-                                {showForm ? '✕' : '➕'}
+                                {showForm ? '?' : '?'}
                             </button>
                         </div>
 
@@ -2766,8 +2837,8 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                         onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
                                         style={{ width: '100%', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-sand-dark)' }}
                                     >
-                                        {Object.keys(professionIcons).map(key => (
-                                            <option key={key} value={key}>{professionIcons[key]} {t.professionals.professions[key]}</option>
+                                        {Object.keys(professionIcons).map((key) => (
+                                            <option key={key} value={key}>{professionIcons[key]} {t.professionals.professions[key] || key}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -2791,50 +2862,46 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                         style={{ resize: 'vertical' }}
                                     />
                                 </div>
-                                <button
-                                    className="btn-send-notice"
-                                    onClick={handleAddProfessional}
-                                    disabled={!formData.name.trim() || !formData.phone.trim()}
-                                >
-                                    👷 {t.professionals.add}
+                                <button className="btn-send-notice" onClick={handleAddProfessional} disabled={!formData.name.trim() || !formData.phone.trim()}>
+                                    ?? {t.professionals.add}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    {/* Professionals List */}
                     <div className="admin-management-card">
                         <div className="filter-pills" style={{ marginBottom: 'var(--space-md)' }}>
                             <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-                                {lang === 'he' ? 'הכל' : 'All'} ({professionals.length})
+                                {lang === 'he' ? '???' : 'All'} ({professionals.length})
                             </button>
                             <button className={`filter-pill ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>
-                                {t.professionals.pending} ({professionals.filter(p => !p.isApproved).length})
+                                {t.professionals.pending} ({professionals.filter((p) => !p.isApproved).length})
                             </button>
                             <button className={`filter-pill ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>
-                                {t.professionals.approved} ({professionals.filter(p => p.isApproved).length})
+                                {t.professionals.approved} ({professionals.filter((p) => p.isApproved).length})
                             </button>
                         </div>
 
-                        {filteredPros.length === 0 ? (
+                        {isLoading ? (
+                            <div className="no-admins-message">Loading...</div>
+                        ) : filteredPros.length === 0 ? (
                             <div className="no-admins-message">{t.professionals.empty}</div>
                         ) : (
-                            filteredPros.map(pro => (
+                            filteredPros.map((pro) => (
                                 <div key={pro.id} className="user-card">
                                     <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
-                                        {professionIcons[pro.profession]}
+                                        {professionIcons[pro.profession] || '??'}
                                     </div>
                                     <div className="user-info">
                                         <div className="user-name">{pro.name}</div>
-                                        <div className="user-details">
-                                            {t.professionals.professions[pro.profession]} • {pro.phone}
-                                        </div>
+                                        <div className="user-details">{t.professionals.professions[pro.profession] || pro.profession} ? {pro.phone}</div>
+                                        {pro.description ? <div className="user-details">{pro.description}</div> : null}
                                     </div>
                                     <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
                                         {!pro.isApproved && (
-                                            <button className="user-action-btn approve" onClick={() => handleApprove(pro.id)}>✓</button>
+                                            <button className="user-action-btn approve" onClick={() => handleApprove(pro.id)}>?</button>
                                         )}
-                                        <button className="user-action-btn reject" onClick={() => handleDelete(pro.id)}>🗑</button>
+                                        <button className="user-action-btn reject" onClick={() => handleDelete(pro.id)}>??</button>
                                     </div>
                                 </div>
                             ))
@@ -2849,21 +2916,69 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const { t, lang } = useLanguage();
             const [items, setItems] = useState([]);
             const [filter, setFilter] = useState('all');
+            const [isLoading, setIsLoading] = useState(true);
 
             const categoryIcons = {
-                sell: '',
-                buy: '🛒',
-                give: '',
-                seek: ''
+                sell: '???',
+                buy: '??',
+                give: '??',
+                seek: '??'
             };
 
-            const handleDelete = (id) => {
-                if (confirm(lang === 'he' ? 'למחוק מודעה?' : 'Delete listing?')) {
-                    setItems(items.filter(i => i.id !== id));
+            const loadItems = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setItems([]);
+                    setIsLoading(false);
+                    return;
                 }
+
+                const { data, error } = await window.AppAuth.getMarketplaceItems({ includeInactive: true });
+                if (error) {
+                    setItems([]);
+                    setIsLoading(false);
+                    return;
+                }
+
+                setItems((data || []).map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    category: item.category,
+                    price: item.price,
+                    isActive: !!item.is_active,
+                    userName: item.profiles?.full_name || '-',
+                    apartment: item.profiles?.apartment || '-',
+                    photos: item.photos || []
+                })));
+                setIsLoading(false);
             };
 
-            const filteredItems = filter === 'all' ? items : items.filter(i => i.category === filter);
+            useEffect(() => {
+                loadItems();
+            }, []);
+
+            const handleDelete = async (id) => {
+                if (!confirm(lang === 'he' ? '????? ??????' : 'Delete listing?')) return;
+                const { error } = await window.AppAuth.deleteMarketplaceItem(id);
+                if (error) {
+                    alert(error.message || 'Failed to delete listing');
+                    return;
+                }
+                loadItems();
+            };
+
+            const handleClose = async (id) => {
+                const { error } = await window.AppAuth.closeMarketplaceItem(id);
+                if (error) {
+                    alert(error.message || 'Failed to close listing');
+                    return;
+                }
+                loadItems();
+            };
+
+            const source = filter === 'active' ? items.filter((i) => i.isActive) : items;
+            const filteredItems = filter === 'all' || filter === 'active'
+                ? source
+                : source.filter((i) => i.category === filter);
 
             return (
                 <div>
@@ -2874,7 +2989,10 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
                                 {t.marketplace.all} ({items.length})
                             </button>
-                            {Object.keys(categoryIcons).map(cat => (
+                            <button className={`filter-pill ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>
+                                {t.marketplace.active} ({items.filter((i) => i.isActive).length})
+                            </button>
+                            {Object.keys(categoryIcons).map((cat) => (
                                 <button
                                     key={cat}
                                     className={`filter-pill ${filter === cat ? 'active' : ''}`}
@@ -2885,21 +3003,28 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             ))}
                         </div>
 
-                        {filteredItems.length === 0 ? (
+                        {isLoading ? (
+                            <div className="no-admins-message">Loading...</div>
+                        ) : filteredItems.length === 0 ? (
                             <div className="no-admins-message">{t.marketplace.empty}</div>
                         ) : (
-                            filteredItems.map(item => (
+                            filteredItems.map((item) => (
                                 <div key={item.id} className="user-card">
                                     <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
-                                        {categoryIcons[item.category]}
+                                        {categoryIcons[item.category] || '??'}
                                     </div>
                                     <div className="user-info">
                                         <div className="user-name">{item.title}</div>
                                         <div className="user-details">
-                                            {item.price && `₪${item.price} • `}{t.marketplace.by} {item.userName}
+                                            {(item.price !== null && item.price !== undefined) ? `?${item.price} ? ` : ''}
+                                            {t.marketplace.by} {item.userName} ({item.apartment})
                                         </div>
+                                        {!item.isActive ? <div className="user-details">{lang === 'he' ? '?? ????' : 'Inactive'}</div> : null}
                                     </div>
-                                    <button className="user-action-btn reject" onClick={() => handleDelete(item.id)}>🗑</button>
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                        {item.isActive ? <button className="user-action-btn approve" onClick={() => handleClose(item.id)}>?</button> : null}
+                                        <button className="user-action-btn reject" onClick={() => handleDelete(item.id)}>??</button>
+                                    </div>
                                 </div>
                             ))
                         )}

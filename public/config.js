@@ -1,14 +1,13 @@
-// Auto-generated config - DO NOT EDIT
-// Generated at build time from environment variables
+// Public fallback config (safe defaults, no secrets)
 window.APP_CONFIG = {
-  "ADMIN_EMAIL": "",
-  "ADMIN_EMAILS": [],
-  "BUILDING_NAME": "MyBuilding",
-  "BUILDING_NAME_EN": "MyBuilding",
-  "BUILDING_ADDRESS": "",
-  "BUILDING_ADDRESS_EN": "",
-  "INVITATION_SECRET": "default-secret-change-me",
-  "SUPABASE_URL": "",
-  "SUPABASE_ANON_KEY": "",
-  "ONESIGNAL_APP_ID": ""
+  ADMIN_EMAIL: '',
+  ADMIN_EMAILS: [],
+  BUILDING_NAME: 'המשחררים 18',
+  BUILDING_NAME_EN: 'HaMeshahrerim 18',
+  BUILDING_ADDRESS: '',
+  BUILDING_ADDRESS_EN: '',
+  INVITATION_SECRET: '',
+  SUPABASE_URL: '',
+  SUPABASE_ANON_KEY: '',
+  ONESIGNAL_APP_ID: ''
 };
