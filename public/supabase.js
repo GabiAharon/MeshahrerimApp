@@ -175,11 +175,53 @@
 
             const { data, error } = await client
                 .from('payments')
-                .select('id,user_id,apartment,year,is_paid,paid_at,created_at,profiles(full_name,apartment,email)')
+                .select('id,user_id,apartment,year,amount,is_paid,paid_at,created_at,profiles(full_name,apartment,email)')
                 .eq('year', year)
                 .order('apartment', { ascending: true });
 
             return { data: data || [], error };
+        },
+
+        async getFinanceSettings() {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const { data, error } = await client
+                .from('finance_settings')
+                .select('*')
+                .eq('id', 1)
+                .maybeSingle();
+
+            if (error) return { data: null, error };
+            return { data: data || { id: 1, annual_fee: 0, apartments: [] }, error: null };
+        },
+
+        async saveFinanceSettings({ annualFee, apartments = [] }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { data: null, error: { message: 'Not authenticated' } };
+
+            const normalizedApartments = (apartments || [])
+                .map((item) => String(item || '').trim())
+                .filter(Boolean);
+
+            const { data, error } = await client
+                .from('finance_settings')
+                .upsert(
+                    {
+                        id: 1,
+                        annual_fee: Number(annualFee) || 0,
+                        apartments: normalizedApartments,
+                        updated_by: user.id
+                    },
+                    { onConflict: 'id' }
+                )
+                .select()
+                .single();
+
+            return { data, error };
         },
 
         async setPaymentStatus({ userId, apartment, year, isPaid, amount = 0 }) {
@@ -187,20 +229,22 @@
             if (clientError) return { error: clientError };
 
             const paidAt = isPaid ? new Date().toISOString() : null;
+            const apartmentKey = String(apartment || '').trim();
+            if (!apartmentKey) return { error: { message: 'Apartment is required' } };
 
             const { data, error } = await client
                 .from('payments')
                 .upsert(
                     {
-                        user_id: userId,
-                        apartment: apartment || '',
+                        user_id: userId || null,
+                        apartment: apartmentKey,
                         year,
                         amount: Number(amount) || 0,
                         is_paid: !!isPaid,
                         paid_at: paidAt
                     },
                     {
-                        onConflict: 'user_id,year'
+                        onConflict: 'apartment,year'
                     }
                 )
                 .select()
