@@ -1,10 +1,7 @@
-try {
-  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
-} catch (error) {
-  // Keep app SW working even if OneSignal script is temporarily unavailable.
-}
+// PWA Service Worker - handles caching only.
+// OneSignal uses its own dedicated worker: /OneSignalSDKWorker.js
 
-const CACHE_NAME = 'mybuilding-cache-v11';
+const CACHE_NAME = 'mybuilding-cache-v12';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -56,11 +53,21 @@ self.addEventListener('fetch', (event) => {
   const isHtmlNavigation =
     event.request.mode === 'navigate' ||
     (event.request.headers.get('accept') || '').includes('text/html');
+  // config.js must NEVER be cached - it is generated at build time with secrets
+  const isNeverCache = pathname === '/config.js';
+
   const isDynamicScript =
     pathname === '/supabase.js' ||
-    pathname === '/config.js' ||
     pathname === '/push.js' ||
     pathname === '/pwa.js';
+
+  // config.js always fetched from network - never serve from cache
+  if (isNeverCache) {
+    event.respondWith(
+      fetch(event.request).catch(() => new Response('window.APP_CONFIG={};', { headers: { 'Content-Type': 'application/javascript' } }))
+    );
+    return;
+  }
 
   // Always prefer network for HTML so production updates appear immediately.
   if (isHtmlNavigation) {

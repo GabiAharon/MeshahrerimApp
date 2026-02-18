@@ -2,9 +2,6 @@
 (function () {
     const config = window.APP_CONFIG || {};
     const ONE_SIGNAL_APP_ID = config.ONESIGNAL_APP_ID || '';
-    const ONE_SIGNAL_SW_SCOPE = '/';
-    const ONE_SIGNAL_SW_PATH = '/sw.js';
-    const ONE_SIGNAL_SW_UPDATER_PATH = '/sw.js';
 
     const state = {
         initialized: false,
@@ -105,9 +102,8 @@
                     await OneSignal.init({
                         appId: ONE_SIGNAL_APP_ID,
                         allowLocalhostAsSecureOrigin: true,
-                        serviceWorkerPath: ONE_SIGNAL_SW_PATH,
-                        serviceWorkerUpdaterPath: ONE_SIGNAL_SW_UPDATER_PATH,
-                        serviceWorkerParam: { scope: ONE_SIGNAL_SW_SCOPE }
+                        serviceWorkerPath: '/OneSignalSDKWorker.js',
+                        serviceWorkerParam: { scope: '/' }
                     });
                     if (externalUserId) {
                         await OneSignal.login(String(externalUserId));
