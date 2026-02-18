@@ -1499,12 +1499,12 @@
 
                 setIsSavingSettings(false);
                 if (error) {
-                    alert(error.message || (lang === 'he' ? '????? ?????? ?????' : 'Failed to save settings'));
+                    alert(error.message || (lang === 'he' ? '\u05e9\u05de\u05d9\u05e8\u05ea \u05d4\u05d2\u05d3\u05e8\u05d5\u05ea \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save settings'));
                     return;
                 }
 
                 await loadData();
-                alert(lang === 'he' ? '?????? ????? ?????' : 'Finance settings saved');
+                alert(lang === 'he' ? '\u05d4\u05d2\u05d3\u05e8\u05d5\u05ea \u05db\u05e1\u05e4\u05d9\u05dd \u05e0\u05e9\u05de\u05e8\u05d5' : 'Finance settings saved');
             };
 
             const exportProtocol = async () => {
@@ -1552,21 +1552,21 @@
                 if (!window.AppAuth) return;
                 setIsSending(true);
 
-                const title = lang === 'he' ? `????? ???? ${year}` : `Finance update ${year}`;
+                const title = lang === 'he' ? `\u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9 ${year}` : `Finance update ${year}`;
                 const msg = lang === 'he'
-                    ? `????: ${currency}${summary.balance.toLocaleString()} | ??????: ${currency}${summary.collected.toLocaleString()} | ??????: ${currency}${summary.expenses.toLocaleString()}`
+                    ? `\u05d9\u05ea\u05e8\u05d4: ${currency}${summary.balance.toLocaleString()} | \u05d4\u05db\u05e0\u05e1\u05d5\u05ea: ${currency}${summary.collected.toLocaleString()} | \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea: ${currency}${summary.expenses.toLocaleString()}`
                     : `Balance: ${currency}${summary.balance.toLocaleString()} | Collected: ${currency}${summary.collected.toLocaleString()} | Expenses: ${currency}${summary.expenses.toLocaleString()}`;
 
                 await window.AppAuth.createNotice({ title, content: msg, type: 'info' });
                 await window.AppAuth.sendPushBroadcast({ title, message: msg, url: '/notices.html' });
                 setIsSending(false);
-                alert(lang === 'he' ? '???? ????? ????? ???????' : 'Finance update sent to residents');
+                alert(lang === 'he' ? '\u05e0\u05e9\u05dc\u05d7 \u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9\u05dd \u05dc\u05d3\u05d9\u05d9\u05e8\u05d9\u05dd' : 'Finance update sent to residents');
             };
 
             return (
                 <div className="finance-card">
                     <div className="finance-header">
-                        <h3 className="finance-title">{lang === 'he' ? '????? ?????' : 'Finance Management'}</h3>
+                        <h3 className="finance-title">{lang === 'he' ? '\u05d4\u05db\u05e0\u05e1\u05d4 \u05e6\u05e4\u05d5\u05d9\u05d4' : 'Finance Management'}</h3>
                         <span className="finance-period">{year}</span>
                     </div>
 
@@ -1578,7 +1578,7 @@
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())}
                             className="form-input"
-                            placeholder={lang === 'he' ? '???' : 'Year'}
+                            placeholder={lang === 'he' ? '\u05e9\u05e0\u05d4' : 'Year'}
                         />
                         <input
                             type="number"
@@ -1586,10 +1586,10 @@
                             value={annualFee}
                             onChange={(e) => setAnnualFee(Number(e.target.value) || 0)}
                             className="form-input"
-                            placeholder={lang === 'he' ? '????? ??? ???? ?????' : 'Annual fee per apartment'}
+                            placeholder={lang === 'he' ? '\u05ea\u05e9\u05dc\u05d5\u05dd \u05d5\u05d5\u05e2\u05d3 \u05e9\u05e0\u05ea\u05d9 \u05dc\u05d3\u05d9\u05e8\u05d4' : 'Annual fee per apartment'}
                         />
                         <button className="btn-submit" type="button" onClick={saveSettings} disabled={isSavingSettings}>
-                            {isSavingSettings ? '...' : lang === 'he' ? '????' : 'Save'}
+                            {isSavingSettings ? '...' : lang === 'he' ? '\u05e9\u05de\u05d5\u05e8' : 'Save'}
                         </button>
                     </div>
 
@@ -1598,27 +1598,27 @@
                         style={{ minHeight: '90px', marginBottom: '14px', resize: 'vertical' }}
                         value={apartmentsInput}
                         onChange={(e) => setApartmentsInput(e.target.value)}
-                        placeholder={lang === 'he' ? '????? ????? (???? ?? ???? ????): 1,2,3...' : 'Apartment list (comma/new line): 1,2,3...'}
+                        placeholder={lang === 'he' ? '\u05e8\u05e9\u05d9\u05de\u05ea \u05d3\u05d9\u05e8\u05d5\u05ea (\u05e4\u05e1\u05d9\u05e7 \u05d0\u05d5 \u05e9\u05d5\u05e8\u05d4 \u05d7\u05d3\u05e9\u05d4): 1,2,3...' : 'Apartment list (comma/new line): 1,2,3...'}
                     />
 
                     <div className="balance-display">
-                        <div className="balance-label">{lang === 'he' ? '???? ?????' : 'Balance'}</div>
+                        <div className="balance-label">{lang === 'he' ? '\u05d9\u05ea\u05e8\u05d4 \u05d1\u05e7\u05d5\u05e4\u05d4' : 'Balance'}</div>
                         <div className="balance-amount">{currency}{summary.balance.toLocaleString()}</div>
                     </div>
 
-                    <div className="finance-row"><div className="finance-row-label"><div className="finance-row-icon income">E</div><span>{lang === 'he' ? '????? ?????' : 'Expected income'}</span></div><span className="finance-row-amount income">{currency}{summary.expected.toLocaleString()}</span></div>
-                    <div className="finance-row"><div className="finance-row-label"><div className="finance-row-icon income">C</div><span>{lang === 'he' ? '????? ??????' : 'Collected income'}</span></div><span className="finance-row-amount income">{currency}{summary.collected.toLocaleString()}</span></div>
-                    <div className="finance-row"><div className="finance-row-label"><div className="finance-row-icon expense">X</div><span>{lang === 'he' ? '??????' : 'Expenses'}</span></div><span className="finance-row-amount expense">-{currency}{summary.expenses.toLocaleString()}</span></div>
+                    <div className="finance-row"><div className="finance-row-label"><div className="finance-row-icon income">E</div><span>{lang === 'he' ? '\u05d4\u05db\u05e0\u05e1\u05d4 \u05e6\u05e4\u05d5\u05d9\u05d4' : 'Expected income'}</span></div><span className="finance-row-amount income">{currency}{summary.expected.toLocaleString()}</span></div>
+                    <div className="finance-row"><div className="finance-row-label"><div className="finance-row-icon income">C</div><span>{lang === 'he' ? '\u05d4\u05db\u05e0\u05e1\u05d4 \u05e9\u05e0\u05d2\u05d1\u05ea\u05d4' : 'Collected income'}</span></div><span className="finance-row-amount income">{currency}{summary.collected.toLocaleString()}</span></div>
+                    <div className="finance-row"><div className="finance-row-label"><div className="finance-row-icon expense">X</div><span>{lang === 'he' ? '\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea' : 'Expenses'}</span></div><span className="finance-row-amount expense">-{currency}{summary.expenses.toLocaleString()}</span></div>
 
                     <div style={{ marginTop: '10px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                         {lang === 'he'
-                            ? `????? ??????: ${summary.paid} | ??????: ${summary.debtors} | ????? ??????: ${summary.apartments}`
+                            ? `\u05d3\u05d9\u05e8\u05d5\u05ea \u05e9\u05e9\u05d9\u05dc\u05de\u05d5: ${summary.paid} | \u05d7\u05d9\u05d9\u05d1\u05d9\u05dd: ${summary.debtors} | \u05d3\u05d9\u05e8\u05d5\u05ea \u05d1\u05e8\u05e9\u05d9\u05de\u05d4: ${summary.apartments}`
                             : `Paid apartments: ${summary.paid} | Debtors: ${summary.debtors} | Apartments: ${summary.apartments}`}
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-                        <button className="btn-submit" type="button" onClick={exportProtocol}>{lang === 'he' ? '????? ???????? CSV' : 'Export protocol CSV'}</button>
-                        <button className="btn-submit" type="button" onClick={pushFinanceUpdate} disabled={isSending}>{isSending ? '...' : lang === 'he' ? '??? ????? ???????' : 'Send push update'}</button>
+                        <button className="btn-submit" type="button" onClick={exportProtocol}>{lang === 'he' ? '\u05d9\u05d9\u05e6\u05d5\u05d0 \u05e4\u05e8\u05d5\u05d8\u05d5\u05e7\u05d5\u05dc CSV' : 'Export protocol CSV'}</button>
+                        <button className="btn-submit" type="button" onClick={pushFinanceUpdate} disabled={isSending}>{isSending ? '...' : lang === 'he' ? '\u05e9\u05dc\u05d7 \u05e2\u05d3\u05db\u05d5\u05df \u05dc\u05d3\u05d9\u05d9\u05e8\u05d9\u05dd' : 'Send push update'}</button>
                     </div>
                 </div>
             );
@@ -1665,7 +1665,7 @@
                     return {
                         apartment,
                         userId: resident?.id || null,
-                        name: resident?.full_name || resident?.email || (lang === 'he' ? '?? ????? ?????' : 'Not linked to resident'),
+                        name: resident?.full_name || resident?.email || (lang === 'he' ? '\u05dc\u05d0 \u05de\u05e9\u05d5\u05d9\u05da \u05dc\u05d3\u05d9\u05d9\u05e8' : 'Not linked to resident'),
                         paidAmount: Number(payment?.amount || 0),
                         isApproved: resident ? !!resident.is_approved : true
                     };
@@ -1698,7 +1698,7 @@
                 });
 
                 if (error) {
-                    alert(error.message || (lang === 'he' ? '????? ????? ?????' : 'Save failed'));
+                    alert(error.message || (lang === 'he' ? '\u05e9\u05de\u05d9\u05e8\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e0\u05db\u05e9\u05dc\u05d4' : 'Save failed'));
                     return;
                 }
 
@@ -1706,13 +1706,13 @@
                 if (typeof onDataChanged === 'function') onDataChanged();
             };
 
-            if (isLoading) return <div className="no-admins-message" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>{lang === 'he' ? '????...' : 'Loading...'}</div>;
-            if (rows.length === 0) return <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>{lang === 'he' ? '??? ????? ??????. ???? ???? ???? ?????.' : 'No apartments configured. Add them in Finance tab.'}</div>;
+            if (isLoading) return <div className="no-admins-message" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>{lang === 'he' ? '\u05d8\u05d5\u05e2\u05df...' : 'Loading...'}</div>;
+            if (rows.length === 0) return <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>{lang === 'he' ? '\u05d0\u05d9\u05df \u05d3\u05d9\u05e8\u05d5\u05ea \u05d1\u05e8\u05e9\u05d9\u05de\u05d4. \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d5\u05ea\u05df \u05d1\u05de\u05e1\u05da \u05db\u05e1\u05e4\u05d9\u05dd.' : 'No apartments configured. Add them in Finance tab.'}</div>;
 
             return (
                 <div>
                     <div style={{ marginBottom: 'var(--space-md)' }}>
-                        <input type="number" min="2020" max="2100" value={year} onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())} className="form-input" placeholder={lang === 'he' ? '???' : 'Year'} />
+                        <input type="number" min="2020" max="2100" value={year} onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())} className="form-input" placeholder={lang === 'he' ? '\u05e9\u05e0\u05d4' : 'Year'} />
                     </div>
 
                     {rows.map((row) => (
@@ -1720,14 +1720,14 @@
                             <div className="debtor-avatar">??</div>
                             <div className="debtor-info">
                                 <div className="debtor-name">{row.name}</div>
-                                <div className="debtor-apartment">{lang === 'he' ? `???? ${row.apartment}` : `Apartment ${row.apartment}`}</div>
+                                <div className="debtor-apartment">{lang === 'he' ? `\u05d3\u05d9\u05e8\u05d4 ${row.apartment}` : `Apartment ${row.apartment}`}</div>
                             </div>
                             <div style={{ minWidth: 170 }}>
                                 <input type="number" min="0" className="form-input" value={row.paidAmount} onChange={(e) => updateAmount(row.apartment, e.target.value)} dir="ltr" style={{ marginBottom: '6px', padding: '8px 10px' }} />
                                 <button className="reminder-btn" onClick={() => handleSavePayment(row)} disabled={!row.isApproved}>
                                     {!row.isApproved
-                                        ? (lang === 'he' ? '???? ????? ??????' : 'Resident pending approval')
-                                        : (lang === 'he' ? `???? ????? ${currency}` : `Save ${currency} payment`)}
+                                        ? (lang === 'he' ? '\u05d3\u05d9\u05d9\u05e8 \u05de\u05de\u05ea\u05d9\u05df \u05dc\u05d0\u05d9\u05e9\u05d5\u05e8' : 'Resident pending approval')
+                                        : (lang === 'he' ? `\u05e9\u05de\u05d5\u05e8 \u05ea\u05e9\u05dc\u05d5\u05dd ${currency}` : `Save ${currency} payment`)}
                                 </button>
                             </div>
                         </div>
