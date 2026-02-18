@@ -10,7 +10,45 @@
         initialized: false,
         sdkLoaded: false,
         currentUserId: null,
-        initPromise: null
+        initPromise: null,
+        promptButtonShown: false
+    };
+
+    const removePromptButton = () => {
+        const existing = document.getElementById('push-enable-btn');
+        if (existing) existing.remove();
+        state.promptButtonShown = false;
+    };
+
+    const showPromptButton = () => {
+        if (state.promptButtonShown || document.getElementById('push-enable-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'push-enable-btn';
+        btn.type = 'button';
+        btn.textContent = 'הפעל התראות';
+        btn.style.position = 'fixed';
+        btn.style.bottom = '156px';
+        btn.style.left = '16px';
+        btn.style.zIndex = '9999';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '999px';
+        btn.style.padding = '10px 14px';
+        btn.style.background = '#D4785C';
+        btn.style.color = '#fff';
+        btn.style.fontFamily = 'Assistant, Rubik, sans-serif';
+        btn.style.fontWeight = '700';
+        btn.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+        btn.style.cursor = 'pointer';
+        btn.addEventListener('click', async () => {
+            const result = await window.AppPush.promptForPermission();
+            if (result?.error) {
+                alert(result.error.message || 'נכשל בהפעלת התראות');
+                return;
+            }
+            removePromptButton();
+        });
+        document.body.appendChild(btn);
+        state.promptButtonShown = true;
     };
 
     const runWithOneSignal = (callback) => new Promise((resolve, reject) => {
@@ -110,13 +148,39 @@
                 await ensureInit(null);
                 await runWithOneSignal(async (OneSignal) => {
                     const permission = await OneSignal.Notifications.permission;
-                    if (permission === 'granted') return;
+                    if (permission === 'granted') {
+                        removePromptButton();
+                        return;
+                    }
                     await OneSignal.Notifications.requestPermission();
+                    const afterPermission = await OneSignal.Notifications.permission;
+                    if (afterPermission === 'granted') {
+                        removePromptButton();
+                    }
                 });
                 return { data: true, error: null };
             } catch (error) {
                 console.error('Push permission request failed:', error);
+                showPromptButton();
                 return { error };
+            }
+        },
+
+        async ensurePromptButton() {
+            if (!ONE_SIGNAL_APP_ID) return;
+            try {
+                await ensureInit(null);
+                await runWithOneSignal(async (OneSignal) => {
+                    const permission = await OneSignal.Notifications.permission;
+                    if (permission === 'granted') {
+                        removePromptButton();
+                    } else {
+                        showPromptButton();
+                    }
+                });
+            } catch (error) {
+                console.warn('Could not evaluate push permission state:', error);
+                showPromptButton();
             }
         }
     };

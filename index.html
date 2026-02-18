@@ -1572,6 +1572,9 @@
                                     if (permissionResult?.error) {
                                         console.warn('Push permission skipped:', permissionResult.error.message || permissionResult.error);
                                     }
+                                    if (window.AppPush.ensurePromptButton) {
+                                        await window.AppPush.ensurePromptButton();
+                                    }
                                 }
                             }
                             setAuthState('approved');
