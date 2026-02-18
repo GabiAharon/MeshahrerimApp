@@ -70,8 +70,8 @@
             min-height: 100vh;
             min-height: 100dvh;
             line-height: 1.5;
-            overflow: hidden;
-            overscroll-behavior-y: none;
+            overflow: auto;
+            overscroll-behavior-y: contain;
         }
         [dir="rtl"] { text-align: right; }
         #root { min-height: 100vh; min-height: 100dvh; }
@@ -80,12 +80,12 @@
             max-width: 430px;
             margin: 0 auto;
             background: #F5F7F6;
-            min-height: 100vh;
-            min-height: 100dvh;
+            height: 100vh;
+            height: 100dvh;
             position: relative;
-            overflow-y: auto;
-            overscroll-behavior-y: contain;
-            -webkit-overflow-scrolling: touch;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
@@ -207,8 +207,12 @@
 
         /* Main Content */
         .main-content {
+            flex: 1;
             padding: 0 var(--space-lg);
             padding-bottom: calc(80px + var(--safe-bottom) + var(--space-lg));
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         .section-header {
@@ -1428,11 +1432,11 @@
         };
 
         // Components
-        const FinanceSection = () => {
+        const FinanceSection = ({ reloadToken }) => {
             const { t, lang } = useLanguage();
             const [year, setYear] = useState(new Date().getFullYear());
             const [annualFee, setAnnualFee] = useState(Number(localStorage.getItem('mb_annual_fee') || 0));
-            const [summary, setSummary] = useState({ income: 0, expenses: 0, balance: 0, paid: 0, debtors: 0 });
+            const [summary, setSummary] = useState({ income: 0, collected: 0, expenses: 0, balance: 0, paid: 0, debtors: 0 });
 
             const loadSummary = async () => {
                 if (!window.AppAuth || !window.supabaseClient) return;
@@ -1448,16 +1452,18 @@
                 const paidCount = approvedUsers.filter((u) => paidUsers.has(u.id)).length;
                 const debtorsCount = Math.max(approvedUsers.length - paidCount, 0);
 
-                const income = paidCount * (Number(annualFee) || 0);
+                const fee = Number(annualFee) || 0;
+                const income = approvedUsers.length * fee;
+                const collected = paidCount * fee;
                 const expenseTotal = (expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-                const balance = income - expenseTotal;
+                const balance = collected - expenseTotal;
 
-                setSummary({ income, expenses: expenseTotal, balance, paid: paidCount, debtors: debtorsCount });
+                setSummary({ income, collected, expenses: expenseTotal, balance, paid: paidCount, debtors: debtorsCount });
             };
 
             useEffect(() => {
                 loadSummary();
-            }, [year, annualFee]);
+            }, [year, annualFee, reloadToken]);
 
             const saveAnnualFee = () => {
                 localStorage.setItem('mb_annual_fee', String(Number(annualFee) || 0));
@@ -1496,29 +1502,29 @@
 
                     <div className="balance-display">
                         <div className="balance-label">{t.finance.balance}</div>
-                        <div className="balance-amount">₪{summary.balance.toLocaleString()}</div>
+                        <div className="balance-amount">?{summary.balance.toLocaleString()}</div>
                     </div>
 
                     <div className="finance-row">
                         <div className="finance-row-label">
-                            <div className="finance-row-icon income">📈</div>
+                            <div className="finance-row-icon income">??</div>
                             <span>{t.finance.income}</span>
                         </div>
-                        <span className="finance-row-amount income">+₪{summary.income.toLocaleString()}</span>
+                        <span className="finance-row-amount income">+?{summary.income.toLocaleString()}</span>
                     </div>
 
                     <div className="finance-row">
                         <div className="finance-row-label">
-                            <div className="finance-row-icon expense">📉</div>
+                            <div className="finance-row-icon expense">??</div>
                             <span>{t.finance.expenses}</span>
                         </div>
-                        <span className="finance-row-amount expense">-₪{summary.expenses.toLocaleString()}</span>
+                        <span className="finance-row-amount expense">-?{summary.expenses.toLocaleString()}</span>
                     </div>
 
                     <div style={{ marginTop: '10px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                         {lang === 'he'
-                            ? `שילמו: ${summary.paid} | חייבים: ${summary.debtors}`
-                            : `Paid: ${summary.paid} | Debtors: ${summary.debtors}`}
+                            ? `שולם בפועל: ₪${summary.collected.toLocaleString()} | שילמו: ${summary.paid} | חייבים: ${summary.debtors}`
+                            : `Collected: ₪${summary.collected.toLocaleString()} | Paid: ${summary.paid} | Debtors: ${summary.debtors}`}
                     </div>
                 </div>
             );
@@ -3099,7 +3105,7 @@
                     </div>
 
                     <main className="main-content">
-                        {activeTab === 'finance' && <FinanceSection />}
+                        {activeTab === 'finance' && <FinanceSection reloadToken={dataVersion} />}
                         {activeTab === 'debtors' && <DebtorsSection onDataChanged={() => setDataVersion((v) => v + 1)} />}
                         {activeTab === 'expenses' && <ExpensesSection reloadToken={dataVersion} onAdd={() => setShowExpenseModal(true)} />}
                         {activeTab === 'users' && <UsersSection />}
