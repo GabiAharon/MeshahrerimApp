@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mybuilding-cache-v4';
+const CACHE_NAME = 'mybuilding-cache-v5';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -15,7 +15,8 @@ const APP_SHELL = [
   '/pwa.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  '/icons/app-logo-cropped.png'
+  '/icons/app-logo-cropped.png',
+  '/icons/source-app-image.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -269,8 +269,10 @@
         .logo-image {
             width: 120px;
             height: 120px;
-            object-fit: cover;
-            border-radius: 26px;
+            object-fit: contain;
+            border-radius: 18px;
+            padding: 4px;
+            background: #fff;
             animation: logoImageFloat 2.8s ease-in-out infinite;
             filter: drop-shadow(0 8px 20px rgba(45, 90, 74, 0.28));
         }
@@ -1205,7 +1207,7 @@
                     <div className="welcome-content">
                         <div className="logo-container">
                             <div className="logo">
-                                <img className="logo-image" src="/icons/app-logo-cropped.png" alt="App logo" />
+                                <img className="logo-image" src="/icons/source-app-image.png" alt="App logo" />
                             </div>
                         </div>
                         <h1 className="welcome-title">{t.welcome.title}</h1>
