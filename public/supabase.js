@@ -491,6 +491,17 @@
             return { data: data || [], error };
         },
 
+        async deleteNotice(noticeId) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { error: clientError };
+
+            const { error } = await client
+                .from('notices')
+                .delete()
+                .eq('id', noticeId);
+            return { error };
+        },
+
         async setFaultPhotoPreservation(faultId, preserve = true) {
             const { client, error: clientError } = withClient();
             if (clientError) return { error: clientError };

@@ -16,7 +16,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/theme-boost.css">
 
     <style>
@@ -54,8 +54,8 @@
             --shadow-sm: 0 2px 8px rgba(61, 46, 42, 0.06);
             --shadow-md: 0 4px 16px rgba(61, 46, 42, 0.08);
             --shadow-lg: 0 8px 32px rgba(61, 46, 42, 0.12);
-            --font-display: 'Fraunces', serif;
-            --font-body: 'Rubik', sans-serif;
+            --font-display: 'Assistant', sans-serif;
+            --font-body: 'Assistant', sans-serif;
             --safe-top: env(safe-area-inset-top, 0px);
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -150,9 +150,22 @@
 
         .stat-value {
             font-family: var(--font-display);
-            font-size: 1.5rem;
+            font-size: clamp(1.2rem, 6vw, 2rem);
             font-weight: 700;
             margin-bottom: var(--space-xs);
+            line-height: 1.1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            direction: ltr;
+            unicode-bidi: plaintext;
+            font-variant-numeric: tabular-nums;
+        }
+
+        @media (max-width: 420px) {
+            .stat-value {
+                font-size: clamp(1rem, 5vw, 1.65rem);
+            }
         }
 
         .stat-value.positive { color: var(--color-success); }
@@ -1233,15 +1246,15 @@
                     delete: 'מחק',
                     noActive: 'אין הודעות פעילות',
                     templateList: [
-                        { id: 'water', icon: '', title: 'הפסקת מים מתוכננת', type: 'urgent' },
-                        { id: 'elevator', icon: '', title: 'תחזוקת מעלית', type: 'maintenance' },
-                        { id: 'meeting', icon: '', title: 'אסיפת דיירים', type: 'event' },
-                        { id: 'assembly-urgent', icon: '', title: 'אסיפת דיירים - הודעה חשובה', type: 'event' },
-                        { id: 'cleaning', icon: '', title: 'עדכון שעות ניקיון', type: 'info' },
-                        { id: 'electricity', icon: '', title: 'הפסקת חשמל', type: 'urgent' },
-                        { id: 'parking', icon: '', title: 'הודעה על חניה', type: 'info' },
-                        { id: 'pest', icon: '', title: 'הדברה בבניין', type: 'maintenance' },
-                        { id: 'event', icon: '', title: 'אירוע קהילתי', type: 'event' }
+                        { id: 'water', icon: '\uD83D\uDEB0', title: 'הפסקת מים מתוכננת', type: 'urgent' },
+                        { id: 'elevator', icon: '\uD83D\uDED7', title: 'תחזוקת מעלית', type: 'maintenance' },
+                        { id: 'meeting', icon: '\uD83D\uDCCB', title: 'אסיפת דיירים', type: 'event' },
+                        { id: 'assembly-urgent', icon: '\uD83D\uDCE2', title: 'אסיפת דיירים - הודעה חשובה', type: 'event' },
+                        { id: 'cleaning', icon: '\uD83E\uDDF9', title: 'עדכון שעות ניקיון', type: 'info' },
+                        { id: 'electricity', icon: '\u26A1', title: 'הפסקת חשמל', type: 'urgent' },
+                        { id: 'parking', icon: '\uD83D\uDE97', title: 'הודעה על חניה', type: 'info' },
+                        { id: 'pest', icon: '\uD83C\uDF3F', title: 'הדברה בבניין', type: 'maintenance' },
+                        { id: 'event', icon: '\uD83C\uDF89', title: 'אירוע קהילתי', type: 'event' }
                     ]
                 },
                 faults: { title: 'ניהול תקלות', all: 'כל התקלות', open: 'פתוחות', inProgress: 'בטיפול', fixed: 'טופלו', empty: 'אין תקלות', markProgress: 'העבר לטיפול', markFixed: 'סמן כטופל', delete: 'מחק' },
@@ -1315,11 +1328,11 @@
                         { id: 'water', icon: '🚰', title: 'Planned Water Shutdown', type: 'urgent' },
                         { id: 'elevator', icon: '🛗', title: 'Elevator Maintenance', type: 'maintenance' },
                         { id: 'meeting', icon: '📋', title: 'Residents Meeting', type: 'event' },
-                        { id: 'assembly-urgent', icon: '', title: 'Residents Assembly - Important', type: 'event' },
+                        { id: 'assembly-urgent', icon: '\uD83D\uDCE2', title: 'Residents Assembly - Important', type: 'event' },
                         { id: 'cleaning', icon: '🧹', title: 'Cleaning Hours Update', type: 'info' },
                         { id: 'electricity', icon: '⚡', title: 'Power Outage', type: 'urgent' },
                         { id: 'parking', icon: '🚗', title: 'Parking Notice', type: 'info' },
-                        { id: 'pest', icon: '', title: 'Pest Control', type: 'maintenance' },
+                        { id: 'pest', icon: '\uD83C\uDF3F', title: 'Pest Control', type: 'maintenance' },
                         { id: 'event', icon: '🎉', title: 'Community Event', type: 'event' }
                     ]
                 },
@@ -2234,6 +2247,44 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [customTitle, setCustomTitle] = useState('');
             const [customContent, setCustomContent] = useState('');
             const [customType, setCustomType] = useState('info');
+            const [isLoading, setIsLoading] = useState(true);
+
+            const typeMeta = {
+                urgent: { icon: '\u26A0\uFE0F', label: lang === 'he' ? '\u05d3\u05d7\u05d5\u05e3' : 'Urgent' },
+                event: { icon: '\uD83D\uDCC5', label: lang === 'he' ? '\u05d0\u05d9\u05e8\u05d5\u05e2' : 'Event' },
+                info: { icon: '\u2139\uFE0F', label: lang === 'he' ? '\u05de\u05d9\u05d3\u05e2' : 'Info' },
+                maintenance: { icon: '\uD83D\uDD27', label: lang === 'he' ? '\u05ea\u05d7\u05d6\u05d5\u05e7\u05d4' : 'Maintenance' }
+            };
+
+            const mapNotice = (notice) => ({
+                ...notice,
+                icon: typeMeta[notice.type]?.icon || '\uD83D\uDCE2',
+                date: notice.created_at
+                    ? new Date(notice.created_at).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
+                    : ''
+            });
+
+            const loadActiveNotices = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getActiveNotices();
+                if (error) {
+                    console.error('Failed to load notices', error);
+                    setIsLoading(false);
+                    return;
+                }
+
+                setActiveNotices((data || []).map(mapNotice));
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                setIsLoading(true);
+                loadActiveNotices();
+            }, [lang]);
 
             const handleSelectTemplate = (template) => {
                 setSelectedTemplate(template.id === selectedTemplate ? null : template.id);
@@ -2243,8 +2294,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
 
             const handleSendNotice = async () => {
                 if (!selectedTemplate) return;
-
-                const template = t.notices.templateList.find(t => t.id === selectedTemplate);
+                const template = t.notices.templateList.find((item) => item.id === selectedTemplate);
                 if (!template) return;
 
                 setSendingStatus('sending');
@@ -2265,27 +2315,19 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         title: template.title,
                         message: template.description || template.title
                     });
+
+                    await loadActiveNotices();
                 }
 
-                const newNotice = {
-                    id: Date.now(),
-                    icon: template.icon,
-                    title: template.title,
-                    type: template.type,
-                    date: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
-                };
-                setActiveNotices(prev => [newNotice, ...prev]);
                 setSendingStatus('sent');
                 setTimeout(() => {
                     setSelectedTemplate(null);
                     setSendingStatus('idle');
-                }, 1500);
+                }, 1200);
             };
 
             const handleSendCustomNotice = async () => {
                 if (!customTitle.trim()) return;
-
-                const typeIcons = { urgent: '⚠', event: '📅', info: 'ℹ', maintenance: '🔧' };
 
                 if (window.AppAuth && window.supabaseClient) {
                     const { error } = await window.AppAuth.createNotice({
@@ -2302,53 +2344,45 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         title: customTitle.trim(),
                         message: customContent.trim() || customTitle.trim()
                     });
+
+                    await loadActiveNotices();
                 }
 
-                const newNotice = {
-                    id: Date.now(),
-                    icon: typeIcons[customType],
-                    title: customTitle,
-                    content: customContent,
-                    type: customType,
-                    date: new Date().toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-US')
-                };
-                setActiveNotices(prev => [newNotice, ...prev]);
                 setCustomTitle('');
                 setCustomContent('');
                 setCustomType('info');
                 setShowCustomForm(false);
             };
 
-            const handleDeleteNotice = (id) => {
-                setActiveNotices(prev => prev.filter(n => n.id !== id));
-            };
-
-            const typeLabels = {
-                urgent: lang === 'he' ? 'דחוף' : 'Urgent',
-                event: lang === 'he' ? 'ירוע' : 'Event',
-                info: lang === 'he' ? 'מידע' : 'Info',
-                maintenance: lang === 'he' ? 'תחזוקה' : 'Maintenance'
+            const handleDeleteNotice = async (id) => {
+                if (!window.AppAuth) return;
+                const { error } = await window.AppAuth.deleteNotice(id);
+                if (error) {
+                    alert(error.message || (lang === 'he' ? '\u05de\u05d7\u05d9\u05e7\u05ea \u05d4\u05d5\u05d3\u05e2\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to delete notice'));
+                    return;
+                }
+                await loadActiveNotices();
             };
 
             return (
                 <div>
-                    {/* Quick Templates */}
                     <div className="admin-management-card">
                         <div className="admin-section-title">{t.notices.templates}</div>
                         <div className="notices-templates-grid">
-                            {t.notices.templateList.map(template => (
-                                <div
-                                    key={template.id}
-                                    className={`template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
-                                    onClick={() => handleSelectTemplate(template)}
-                                >
-                                    <div className="template-icon">{template.icon}</div>
-                                    <div className="template-title">{template.title}</div>
-                                    <span className={`template-type ${template.type}`}>
-                                        {typeLabels[template.type]}
-                                    </span>
-                                </div>
-                            ))}
+                            {t.notices.templateList.map((template) => {
+                                const icon = template.icon || typeMeta[template.type]?.icon || '\uD83D\uDCE2';
+                                return (
+                                    <div
+                                        key={template.id}
+                                        className={`template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
+                                        onClick={() => handleSelectTemplate(template)}
+                                    >
+                                        <div className="template-icon">{icon}</div>
+                                        <div className="template-title">{template.title}</div>
+                                        <span className={`template-type ${template.type}`}>{typeMeta[template.type]?.label}</span>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         <button
@@ -2356,16 +2390,18 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             onClick={handleSendNotice}
                             disabled={!selectedTemplate || sendingStatus === 'sending'}
                         >
-                            {sendingStatus === 'sent' ? `✓ ${t.notices.sent}` : `📢 ${t.notices.send}`}
+                            {sendingStatus === 'sent' ? `\u2713 ${t.notices.sent}` : `\uD83D\uDCE2 ${t.notices.send}`}
                         </button>
                     </div>
 
-                    {/* Custom Notice */}
                     <div className="admin-management-card">
                         <div className="admin-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>{lang === 'he' ? 'כתיבת הודעה מותמת' : 'Write Custom Notice'}</span>
+                            <span>{lang === 'he' ? '\u05db\u05ea\u05d9\u05d1\u05ea \u05d4\u05d5\u05d3\u05e2\u05d4 \u05de\u05d5\u05ea\u05d0\u05de\u05ea' : 'Write Custom Notice'}</span>
                             <button
-                                onClick={() => { setShowCustomForm(!showCustomForm); setSelectedTemplate(null); }}
+                                onClick={() => {
+                                    setShowCustomForm(!showCustomForm);
+                                    setSelectedTemplate(null);
+                                }}
                                 style={{
                                     background: showCustomForm ? 'var(--color-primary)' : 'var(--color-sand)',
                                     color: showCustomForm ? 'white' : 'var(--color-text)',
@@ -2377,76 +2413,65 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     fontWeight: 600
                                 }}
                             >
-                                {showCustomForm ? '✕' : ''}
+                                {showCustomForm ? '\u2715' : '+'}
                             </button>
                         </div>
 
                         {showCustomForm && (
                             <div style={{ marginTop: 'var(--space-md)' }}>
                                 <div className="form-group">
-                                    <label className="form-label">{lang === 'he' ? 'כותרת' : 'Title'}</label>
+                                    <label className="form-label">{lang === 'he' ? '\u05db\u05d5\u05ea\u05e8\u05ea' : 'Title'}</label>
                                     <input
                                         type="text"
                                         className="form-input"
                                         value={customTitle}
                                         onChange={(e) => setCustomTitle(e.target.value)}
-                                        placeholder={lang === 'he' ? 'הכנס כותרת...' : 'Enter title...'}
+                                        placeholder={lang === 'he' ? '\u05d4\u05db\u05e0\u05e1 \u05db\u05d5\u05ea\u05e8\u05ea...' : 'Enter title...'}
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">{lang === 'he' ? 'תוכן' : 'Content'}</label>
+                                    <label className="form-label">{lang === 'he' ? '\u05ea\u05d5\u05db\u05df' : 'Content'}</label>
                                     <textarea
                                         className="form-input"
                                         value={customContent}
                                         onChange={(e) => setCustomContent(e.target.value)}
-                                        placeholder={lang === 'he' ? 'הכנס תוכן ההודעה...' : 'Enter notice content...'}
+                                        placeholder={lang === 'he' ? '\u05d4\u05db\u05e0\u05e1 \u05ea\u05d5\u05db\u05df \u05d4\u05d4\u05d5\u05d3\u05e2\u05d4...' : 'Enter notice content...'}
                                         rows={4}
                                         style={{ resize: 'vertical' }}
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">{lang === 'he' ? 'סוג' : 'Type'}</label>
-                                    <select
-                                        className="form-select"
-                                        value={customType}
-                                        onChange={(e) => setCustomType(e.target.value)}
-                                        style={{ width: '100%', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-sand-dark)' }}
-                                    >
-                                        <option value="info">{typeLabels.info}</option>
-                                        <option value="urgent">{typeLabels.urgent}</option>
-                                        <option value="event">{typeLabels.event}</option>
-                                        <option value="maintenance">{typeLabels.maintenance}</option>
+                                    <label className="form-label">{lang === 'he' ? '\u05e1\u05d5\u05d2' : 'Type'}</label>
+                                    <select className="form-select" value={customType} onChange={(e) => setCustomType(e.target.value)}>
+                                        <option value="info">{typeMeta.info.label}</option>
+                                        <option value="urgent">{typeMeta.urgent.label}</option>
+                                        <option value="event">{typeMeta.event.label}</option>
+                                        <option value="maintenance">{typeMeta.maintenance.label}</option>
                                     </select>
                                 </div>
-                                <button
-                                    className="btn-send-notice"
-                                    onClick={handleSendCustomNotice}
-                                    disabled={!customTitle.trim()}
-                                >
-                                    📢 {t.notices.send}
+                                <button className="btn-send-notice" onClick={handleSendCustomNotice} disabled={!customTitle.trim()}>
+                                    {`\uD83D\uDCE2 ${t.notices.send}`}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    {/* Active Notices */}
                     <div className="admin-management-card">
                         <div className="admin-section-title">{t.notices.active}</div>
-                        {activeNotices.length === 0 ? (
+                        {isLoading ? (
+                            <div className="no-admins-message">{lang === 'he' ? '\u05d8\u05d5\u05e2\u05df...' : 'Loading...'}</div>
+                        ) : activeNotices.length === 0 ? (
                             <div className="no-admins-message">{t.notices.noActive}</div>
                         ) : (
                             <div className="active-notices-list">
-                                {activeNotices.map(notice => (
+                                {activeNotices.map((notice) => (
                                     <div key={notice.id} className="active-notice-card">
                                         <div className="active-notice-icon">{notice.icon}</div>
                                         <div className="active-notice-info">
                                             <div className="active-notice-title">{notice.title}</div>
                                             <div className="active-notice-date">{notice.date}</div>
                                         </div>
-                                        <button
-                                            className="btn-delete"
-                                            onClick={() => handleDeleteNotice(notice.id)}
-                                        >
+                                        <button className="btn-delete" onClick={() => handleDeleteNotice(notice.id)}>
                                             {t.notices.delete}
                                         </button>
                                     </div>
