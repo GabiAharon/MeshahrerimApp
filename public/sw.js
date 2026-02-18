@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mybuilding-cache-v1';
+const CACHE_NAME = 'mybuilding-cache-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -43,11 +43,31 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  const requestUrl = new URL(event.request.url);
+  const isHtmlNavigation =
+    event.request.mode === 'navigate' ||
+    (event.request.headers.get('accept') || '').includes('text/html');
+
+  // Always prefer network for HTML so production updates appear immediately.
+  if (isHtmlNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request)
         .then((networkResponse) => {
+          if (requestUrl.origin !== self.location.origin) return networkResponse;
           const copy = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
           return networkResponse;

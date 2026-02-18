@@ -51,8 +51,14 @@
   });
 
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js').catch(function (error) {
-      console.warn('Service worker registration failed:', error);
-    });
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () {
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          window.location.reload();
+        });
+      })
+      .catch(function (error) {
+        console.warn('Service worker registration failed:', error);
+      });
   });
 })();
