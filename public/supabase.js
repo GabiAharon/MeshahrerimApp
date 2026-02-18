@@ -182,6 +182,46 @@
             return { data: result.data || [], error: result.error };
         },
 
+        async getPaymentsForYear(year) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: [], error: clientError };
+
+            const { data, error } = await client
+                .from('payments')
+                .select('id,user_id,apartment,year,is_paid,paid_at,created_at,profiles(full_name,apartment,email)')
+                .eq('year', year)
+                .order('apartment', { ascending: true });
+
+            return { data: data || [], error };
+        },
+
+        async setPaymentStatus({ userId, apartment, year, isPaid }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { error: clientError };
+
+            const paidAt = isPaid ? new Date().toISOString() : null;
+
+            const { data, error } = await client
+                .from('payments')
+                .upsert(
+                    {
+                        user_id: userId,
+                        apartment: apartment || '',
+                        year,
+                        amount: 0,
+                        is_paid: !!isPaid,
+                        paid_at: paidAt
+                    },
+                    {
+                        onConflict: 'user_id,year'
+                    }
+                )
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
         subscribeToPendingUsers(onChange) {
             const { client, error } = withClient();
             if (error || !client || typeof onChange !== 'function') return () => {};
