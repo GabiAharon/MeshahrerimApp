@@ -212,7 +212,7 @@
             return { error };
         },
 
-        async addProfessional({ name, profession, phone, description }) {
+        async addProfessional({ name, profession, phone, description, isApproved = false }) {
             const { client, error: clientError } = withClient();
             if (clientError) return { data: null, error: clientError };
 
@@ -227,6 +227,8 @@
                 return { data: null, error: { message: 'החשבון שלך עדיין ממתין לאישור מנהל' } };
             }
 
+            const allowDirectApprove = profile.is_admin === true && isApproved === true;
+
             const { data, error } = await client
                 .from('professionals')
                 .insert({
@@ -235,7 +237,7 @@
                     phone: phone ? String(phone).trim() : null,
                     description: description ? String(description).trim() : null,
                     recommended_by: user.id,
-                    is_approved: !!profile?.is_admin
+                    is_approved: allowDirectApprove
                 })
                 .select()
                 .single();

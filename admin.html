@@ -2659,7 +2659,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                     alert(lang === 'he' ? 'יש להזין טלפון ישראלי תקין (10 ספרות, מתחיל ב-05)' : 'Please enter a valid Israeli mobile number');
                     return;
                 }
-                const { error } = await window.AppAuth.addProfessional({ name: formData.name.trim(), profession: formData.profession, phone: normalizeIsraeliPhone(formData.phone), description: formData.description.trim() });
+                const { error } = await window.AppAuth.addProfessional({ name: formData.name.trim(), profession: formData.profession, phone: normalizeIsraeliPhone(formData.phone), description: formData.description.trim(), isApproved: true });
                 if (error) return alert(error.message || 'Failed to add professional');
                 setFormData({ name: '', profession: 'plumber', phone: '', description: '' });
                 setShowForm(false);
