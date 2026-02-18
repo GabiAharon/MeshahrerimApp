@@ -8,61 +8,85 @@
         sdkLoaded: false,
         currentUserId: null,
         initPromise: null,
-        promptButtonShown: false
+        toggleRendered: false
     };
 
-    const removePromptButton = () => {
-        const existing = document.getElementById('push-enable-btn');
-        if (existing) existing.remove();
-        state.promptButtonShown = false;
+    // ─── Bell Toggle UI ────────────────────────────────────────────────────────
+
+    const TOGGLE_ID = 'push-bell-toggle';
+
+    const renderToggle = (granted) => {
+        let el = document.getElementById(TOGGLE_ID);
+        if (!el) {
+            el = document.createElement('button');
+            el.id = TOGGLE_ID;
+            el.type = 'button';
+            el.setAttribute('aria-label', 'התראות');
+            Object.assign(el.style, {
+                position:    'fixed',
+                top:         'calc(env(safe-area-inset-top, 0px) + 14px)',
+                left:        '16px',
+                zIndex:      '9998',
+                border:      'none',
+                borderRadius:'999px',
+                width:       '44px',
+                height:      '44px',
+                display:     'flex',
+                alignItems:  'center',
+                justifyContent: 'center',
+                cursor:      'pointer',
+                transition:  'all 0.3s ease',
+                boxShadow:   '0 2px 12px rgba(61,46,42,0.15)',
+                fontSize:    '1.15rem',
+            });
+            el.addEventListener('click', async () => {
+                if (state.permission === 'granted') return; // already on
+                const result = await window.AppPush.promptForPermission();
+                if (result?.error) console.warn('Push permission error:', result.error.message || result.error);
+            });
+            document.body.appendChild(el);
+        }
+        if (granted) {
+            el.innerHTML = '🔔';
+            el.title = 'התראות פעילות';
+            Object.assign(el.style, {
+                background: 'linear-gradient(135deg,#D4785C,#B8614A)',
+                color:      'white',
+                opacity:    '0.92',
+            });
+            el.style.pointerEvents = 'none'; // already granted – no action needed
+        } else {
+            el.innerHTML = '🔕';
+            el.title = 'הפעל התראות';
+            Object.assign(el.style, {
+                background: 'rgba(255,255,255,0.92)',
+                color:      '#8B7355',
+                backdropFilter: 'blur(8px)',
+                opacity:    '1',
+                pointerEvents: 'auto',
+            });
+        }
+        state.toggleRendered = true;
     };
 
-    const showPromptButton = () => {
-        if (state.promptButtonShown || document.getElementById('push-enable-btn')) return;
-        const btn = document.createElement('button');
-        btn.id = 'push-enable-btn';
-        btn.type = 'button';
-        btn.textContent = 'הפעל התראות';
-        btn.style.position = 'fixed';
-        btn.style.bottom = '156px';
-        btn.style.left = '16px';
-        btn.style.zIndex = '9999';
-        btn.style.border = 'none';
-        btn.style.borderRadius = '999px';
-        btn.style.padding = '10px 14px';
-        btn.style.background = '#D4785C';
-        btn.style.color = '#fff';
-        btn.style.fontFamily = 'Assistant, Rubik, sans-serif';
-        btn.style.fontWeight = '700';
-        btn.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
-        btn.style.cursor = 'pointer';
-        btn.addEventListener('click', async () => {
-            const result = await window.AppPush.promptForPermission();
-            if (result?.error) {
-                alert(result.error.message || 'נכשל בהפעלת התראות');
-                return;
-            }
-            removePromptButton();
-        });
-        document.body.appendChild(btn);
-        state.promptButtonShown = true;
+    const removeToggle = () => {
+        const el = document.getElementById(TOGGLE_ID);
+        if (el) el.remove();
+        state.toggleRendered = false;
     };
+
+    // ─── OneSignal SDK helpers ─────────────────────────────────────────────────
 
     const runWithOneSignal = (callback) => new Promise((resolve, reject) => {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function (OneSignal) {
-            try {
-                const result = await callback(OneSignal);
-                resolve(result);
-            } catch (error) {
-                reject(error);
-            }
+            try { resolve(await callback(OneSignal)); }
+            catch (error) { reject(error); }
         });
     });
 
     const loadSdk = async () => {
         if (state.sdkLoaded) return true;
-
         await new Promise((resolve, reject) => {
             const existing = document.querySelector('script[data-onesignal-sdk="true"]');
             if (existing) {
@@ -70,7 +94,6 @@
                 existing.addEventListener('error', () => reject(new Error('OneSignal SDK failed to load')), { once: true });
                 return;
             }
-
             const script = document.createElement('script');
             script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
             script.defer = true;
@@ -79,7 +102,6 @@
             script.addEventListener('error', () => reject(new Error('OneSignal SDK failed to load')), { once: true });
             document.head.appendChild(script);
         });
-
         state.sdkLoaded = true;
         return true;
     };
@@ -92,7 +114,6 @@
             state.currentUserId = String(externalUserId);
             return;
         }
-
         if (state.initialized) return;
 
         if (!state.initPromise) {
@@ -113,19 +134,15 @@
                 state.currentUserId = externalUserId ? String(externalUserId) : null;
             })();
         }
-
         await state.initPromise;
     };
 
+    // ─── Public API ────────────────────────────────────────────────────────────
+
     window.AppPush = {
         async init(externalUserId) {
-            if (!ONE_SIGNAL_APP_ID) {
-                return { error: { message: 'OneSignal app id not configured' } };
-            }
-            if (!window.isSecureContext) {
-                return { error: { message: 'Push requires HTTPS context' } };
-            }
-
+            if (!ONE_SIGNAL_APP_ID) return { error: { message: 'OneSignal app id not configured' } };
+            if (!window.isSecureContext) return { error: { message: 'Push requires HTTPS context' } };
             try {
                 await ensureInit(externalUserId);
                 return { data: true, error: null };
@@ -136,28 +153,22 @@
         },
 
         async promptForPermission() {
-            if (!ONE_SIGNAL_APP_ID) {
-                return { error: { message: 'OneSignal app id not configured' } };
-            }
-
+            if (!ONE_SIGNAL_APP_ID) return { error: { message: 'OneSignal app id not configured' } };
             try {
                 await ensureInit(null);
                 await runWithOneSignal(async (OneSignal) => {
-                    const permission = await OneSignal.Notifications.permission;
-                    if (permission === 'granted') {
-                        removePromptButton();
-                        return;
-                    }
+                    const permission = OneSignal.Notifications.permission;
+                    state.permission = permission;
+                    if (permission === 'granted') { renderToggle(true); return; }
                     await OneSignal.Notifications.requestPermission();
-                    const afterPermission = await OneSignal.Notifications.permission;
-                    if (afterPermission === 'granted') {
-                        removePromptButton();
-                    }
+                    const after = OneSignal.Notifications.permission;
+                    state.permission = after;
+                    renderToggle(after === 'granted');
                 });
                 return { data: true, error: null };
             } catch (error) {
                 console.error('Push permission request failed:', error);
-                showPromptButton();
+                renderToggle(false);
                 return { error };
             }
         },
@@ -167,16 +178,13 @@
             try {
                 await ensureInit(null);
                 await runWithOneSignal(async (OneSignal) => {
-                    const permission = await OneSignal.Notifications.permission;
-                    if (permission === 'granted') {
-                        removePromptButton();
-                    } else {
-                        showPromptButton();
-                    }
+                    const permission = OneSignal.Notifications.permission;
+                    state.permission = permission;
+                    renderToggle(permission === 'granted');
                 });
             } catch (error) {
                 console.warn('Could not evaluate push permission state:', error);
-                showPromptButton();
+                renderToggle(false);
             }
         }
     };
