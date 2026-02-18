@@ -11,7 +11,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <title>MyBuilding - ×”×‘×™×ª ×©×œ×™</title>
+    <title>MyBuilding - הבית שלי</title>
 
     <!-- Load config (generated at build time from env vars) -->
     <script src="/config.js"></script>
@@ -828,44 +828,44 @@
         const translations = {
             he: {
                 greeting: {
-                    morning: '×‘×•×§×¨ ×˜×•×‘',
-                    afternoon: '×¦×”×¨×™×™× ×˜×•×‘×™×',
-                    evening: '×¢×¨×‘ ×˜×•×‘',
-                    night: '×œ×™×œ×” ×˜×•×‘'
+                    morning: 'בוקר טוב',
+                    afternoon: 'צהריים טובים',
+                    evening: 'ערב טוב',
+                    night: 'לילה טוב'
                 },
-                apartment: '×“×™×¨×”',
-                building: '×ž×’×“×œ×™ ×”×™×',
+                apartment: 'דירה',
+                building: 'מגדלי הים',
                 payment: {
-                    title: '×¡×˜×˜×•×¡ ×ª×©×œ×•×',
+                    title: 'סטטוס תשלום',
                     year: '2025',
-                    paid: '×©×•×œ× ×‘×ž×œ×•××•',
-                    debt: '×™×ª×¨×ª ×—×•×‘',
-                    total: '×¡×”×´×› ×©×•×œ×',
-                    remaining: '× ×•×ª×¨ ×œ×ª×©×œ×•×',
-                    history: '×”×™×¡×˜×•×¨×™×™×ª ×ª×©×œ×•×ž×™×'
+                    paid: 'שולם במלואו',
+                    debt: 'יתרת חוב',
+                    total: 'סה״כ שולם',
+                    remaining: 'נותר לתשלום',
+                    history: 'היסטוריית תשלומים'
                 },
                 actions: {
-                    title: '×¤×¢×•×œ×•×ª ×ž×”×™×¨×•×ª',
-                    report: '×“×•×•×— ×¢×œ ×ª×§×œ×”',
-                    reportSub: '× ×–×™×œ×”, ×ª××•×¨×”, ×ž×¢×œ×™×ª...',
-                    emergency: '×—×™×¨×•×',
-                    emergencySub: '×§×•×•×™× ×—×ž×™×',
-                    emergencyConfirm: '×œ×”×ª×§×©×¨ ×œ×§×• ×”×—×™×¨×•×?'
+                    title: 'פעולות מהירות',
+                    report: 'דווח על תקלה',
+                    reportSub: 'נזילה, תאורה, מעלית...',
+                    emergency: 'חירום',
+                    emergencySub: 'קווים חמים',
+                    emergencyConfirm: 'להתקשר לקו החירום?'
                 },
                 notices: {
-                    title: '×”×•×“×¢×•×ª ××—×¨×•× ×•×ª',
-                    seeAll: '×›×œ ×”×”×•×“×¢×•×ª',
-                    urgent: '×“×—×•×£',
-                    event: '××™×¨×•×¢',
-                    info: '×ž×™×“×¢',
-                    empty: '××™×Ÿ ×”×•×“×¢×•×ª ×—×“×©×•×ª'
+                    title: 'הודעות אחרונות',
+                    seeAll: 'כל ההודעות',
+                    urgent: 'דחוף',
+                    event: 'אירוע',
+                    info: 'מידע',
+                    empty: 'אין הודעות חדשות'
                 },
                 nav: {
-                    home: '×‘×™×ª',
-                    faults: '×ª×§×œ×•×ª',
-                    notices: '×”×•×“×¢×•×ª',
-                    community: '×§×”×™×œ×”',
-                    profile: '×¤×¨×•×¤×™×œ'
+                    home: 'בית',
+                    faults: 'תקלות',
+                    notices: 'הודעות',
+                    community: 'קהילה',
+                    profile: 'פרופיל'
                 }
             },
             en: {
@@ -876,7 +876,7 @@
                     night: 'Good night'
                 },
                 apartment: 'Apt',
-                building: 'HaMeshahrerim 18',
+                building: 'Sea Towers',
                 payment: {
                     title: 'Payment Status',
                     year: '2025',
@@ -947,8 +947,8 @@
             return window.APP_CONFIG || {
                 ADMIN_EMAIL: '',
                 ADMIN_EMAILS: [],
-                BUILDING_NAME: '×”×‘× ×™×™×Ÿ ×©×œ×™',
-                BUILDING_NAME_EN: 'HaMeshahrerim 18'
+                BUILDING_NAME: 'הבניין שלי',
+                BUILDING_NAME_EN: 'My Building'
             };
         };
 
@@ -981,8 +981,8 @@
         const mockNotices = [];
 
         const getNoticeIcon = (type) => {
-            const icons = { urgent: 'âš ï¸', event: 'ðŸ“…', maintenance: 'ðŸ”§', info: 'â„¹ï¸' };
-            return icons[type] || 'ðŸ“¢';
+            const icons = { urgent: '⚠️', event: '📅', maintenance: '🔧', info: 'ℹ️' };
+            return icons[type] || '📢';
         };
 
         const mapNoticeRow = (row) => ({
@@ -1088,10 +1088,10 @@
                 <header className="welcome-header">
                     <div className="greeting-row">
                         <h1 className="greeting">
-                            {greeting}, {userName} <span className="greeting-emoji">ðŸ‘‹</span>
+                            {greeting}, {userName} <span className="greeting-emoji">👋</span>
                         </h1>
                         <button className="language-toggle" onClick={toggleLanguage}>
-                            {lang === 'he' ? 'EN' : '×¢×‘'}
+                            {lang === 'he' ? 'EN' : 'עב'}
                         </button>
                     </div>
                     <div className="apartment-info">
@@ -1118,7 +1118,7 @@
 
                     <div className="payment-status-row">
                         <div className={`status-icon ${isPaid ? 'paid' : 'debt'}`}>
-                            {isPaid ? 'âœ“' : '!'}
+                            {isPaid ? '✓' : '!'}
                         </div>
                         <div className="status-details">
                             <div className={`status-text ${isPaid ? 'paid' : 'debt'}`}>
@@ -1152,10 +1152,10 @@
             };
 
             const emergencyServices = [
-                { number: '100', name: '×ž×©×˜×¨×”' },
-                { number: '101', name: '×ž×“×´×' },
-                { number: '102', name: '×›×‘××•×ª ×•×”×¦×œ×”' },
-                { number: '106', name: '×ž×•×§×“ ×¢×™×¨×•× ×™' }
+                { number: '100', name: 'משטרה' },
+                { number: '101', name: 'מד״א' },
+                { number: '102', name: 'כבאות והצלה' },
+                { number: '106', name: 'מוקד עירוני' }
             ];
 
             return (
@@ -1164,12 +1164,12 @@
                         <h2 className="section-title">{t.actions.title}</h2>
                         <div className="actions-grid">
                             <button className="action-button" onClick={handleReportFault}>
-                                <div className="action-icon fault">ðŸ”§</div>
+                                <div className="action-icon fault">🔧</div>
                                 <span className="action-label">{t.actions.report}</span>
                                 <span className="action-sublabel">{t.actions.reportSub}</span>
                             </button>
                             <button className="action-button" onClick={handleEmergency}>
-                                <div className="action-icon emergency">ðŸš¨</div>
+                                <div className="action-icon emergency">🚨</div>
                                 <span className="action-label">{t.actions.emergency}</span>
                                 <span className="action-sublabel">{t.actions.emergencySub}</span>
                             </button>
@@ -1202,7 +1202,7 @@
                                 }}
                             >
                                 <div style={{ fontWeight: 800, marginBottom: '10px', fontSize: '1rem' }}>
-                                    ×‘×—×™×¨×ª ×©×™×¨×•×ª ×—×™×¨×•×
+                                    בחירת שירות חירום
                                 </div>
                                 <div style={{ display: 'grid', gap: '8px' }}>
                                     {emergencyServices.map((item) => (
@@ -1240,7 +1240,7 @@
                                         fontWeight: 700
                                     }}
                                 >
-                                    ×¡×’×•×¨
+                                    סגור
                                 </button>
                             </div>
                         </div>
@@ -1307,7 +1307,7 @@
                     </div>
                     {notices.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: 'var(--space-xl)', color: 'var(--color-text-muted)' }}>
-                            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}>ðŸ“­</div>
+                            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}>📭</div>
                             <div>{t.notices.empty}</div>
                         </div>
                     ) : (
@@ -1326,11 +1326,11 @@
             const { t } = useLanguage();
 
             const navItems = [
-                { id: 'home', icon: 'ðŸ ', label: t.nav.home, href: 'index.html', active: true },
-                { id: 'faults', icon: 'ðŸ”§', label: t.nav.faults, href: 'faults.html' },
-                { id: 'notices', icon: 'ðŸ””', label: t.nav.notices, href: 'notices.html', badge: true },
-                { id: 'community', icon: 'ðŸ‘¥', label: t.nav.community, href: 'community.html' },
-                { id: 'profile', icon: 'ðŸ‘¤', label: t.nav.profile, href: 'profile.html' }
+                { id: 'home', icon: '🏠', label: t.nav.home, href: 'index.html', active: true },
+                { id: 'faults', icon: '🔧', label: t.nav.faults, href: 'faults.html' },
+                { id: 'notices', icon: '🔔', label: t.nav.notices, href: 'notices.html', badge: true },
+                { id: 'community', icon: '👥', label: t.nav.community, href: 'community.html' },
+                { id: 'profile', icon: '👤', label: t.nav.profile, href: 'profile.html' }
             ];
 
             return (
@@ -1358,11 +1358,11 @@
 
             const texts = {
                 he: {
-                    title: '×ž×ž×ª×™×Ÿ ×œ××™×©×•×¨',
-                    message: '×”×‘×§×©×” ×©×œ×š ×œ×”×¦×˜×¨×£ ×œ×‘× ×™×™×Ÿ × ×ž×¦××ª ×‘×‘×“×™×§×”.',
-                    info: '×•×¢×“ ×”×‘×™×ª ×™×‘×“×•×§ ××ª ×”×¤×¨×˜×™× ×©×œ×š ×•×™××©×¨ ××ª ×”×’×™×©×” ×‘×”×§×“×.',
-                    contact: '×œ×©××œ×•×ª × ×™×ª×Ÿ ×œ×¤× ×•×ª ×œ×•×•×¢×“ ×”×‘×™×ª',
-                    logout: '×”×ª× ×ª×§'
+                    title: 'ממתין לאישור',
+                    message: 'הבקשה שלך להצטרף לבניין נמצאת בבדיקה.',
+                    info: 'ועד הבית יבדוק את הפרטים שלך ויאשר את הגישה בהקדם.',
+                    contact: 'לשאלות ניתן לפנות לוועד הבית',
+                    logout: 'התנתק'
                 },
                 en: {
                     title: 'Waiting for Approval',
@@ -1383,7 +1383,7 @@
 
             return (
                 <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 'var(--space-lg)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: 'var(--space-lg)' }}>â³</div>
+                    <div style={{ fontSize: '4rem', marginBottom: 'var(--space-lg)' }}>⏳</div>
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: 'var(--space-md)', color: 'var(--color-secondary)' }}>
                         {txt.title}
                     </h1>
@@ -1397,7 +1397,7 @@
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-xs)' }}>
                             {txt.contact}
                         </div>
-                        <div style={{ fontWeight: 600 }}>ðŸ¢ {buildingName}</div>
+                        <div style={{ fontWeight: 600 }}>🏢 {buildingName}</div>
                     </div>
                     <button
                         onClick={handleLogout}
@@ -1475,8 +1475,8 @@
                 return (
                     <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-md)' }}>ðŸ </div>
-                            <div style={{ color: 'var(--color-text-muted)' }}>×˜×•×¢×Ÿ...</div>
+                            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-md)' }}>🏠</div>
+                            <div style={{ color: 'var(--color-text-muted)' }}>טוען...</div>
                         </div>
                     </div>
                 );

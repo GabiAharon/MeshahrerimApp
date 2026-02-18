@@ -9,7 +9,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/icons/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <title>MyBuilding - ×¤×¨×•×¤×™×œ</title>
+    <title>MyBuilding - פרופיל</title>
 
     <!-- Load config (generated at build time from env vars) -->
     <script src="/config.js"></script>
@@ -321,39 +321,39 @@
 
         const translations = {
             he: {
-                profile: '×¤×¨×•×¤×™×œ',
-                apartment: '×“×™×¨×”',
-                building: '×ž×’×“×œ×™ ×”×™×',
-                verified: '×ž××•×ž×ª',
+                profile: 'פרופיל',
+                apartment: 'דירה',
+                building: 'מגדלי הים',
+                verified: 'מאומת',
                 sections: {
-                    account: '×—×©×‘×•×Ÿ',
-                    building: '×‘× ×™×™×Ÿ',
-                    app: '××¤×œ×™×§×¦×™×”'
+                    account: 'חשבון',
+                    building: 'בניין',
+                    app: 'אפליקציה'
                 },
                 menu: {
-                    editProfile: '×¢×¨×™×›×ª ×¤×¨×˜×™×',
-                    editProfileDesc: '×©×, ×˜×œ×¤×•×Ÿ, ×¡×™×¡×ž×”',
-                    payments: '×”×™×¡×˜×•×¨×™×™×ª ×ª×©×œ×•×ž×™×',
-                    paymentsDesc: '×¦×¤×” ×‘×›×œ ×”×ª×©×œ×•×ž×™× ×©×œ×š',
-                    myFaults: '×”×ª×§×œ×•×ª ×©×œ×™',
-                    myFaultsDesc: '×ª×§×œ×•×ª ×©×“×™×•×•×—×ª',
-                    admin: '×œ×•×— ×‘×§×¨×” ×ž× ×”×œ',
-                    adminDesc: '× ×™×”×•×œ ×”×‘× ×™×™×Ÿ',
-                    notifications: '×”×ª×¨××•×ª',
-                    notificationsDesc: '×”×’×“×¨×•×ª push notifications',
-                    language: '×©×¤×”',
-                    about: '××•×“×•×ª',
-                    aboutDesc: '×’×¨×¡×” ×•×ž×™×“×¢',
-                    logout: '×”×ª× ×ª×§',
-                    logoutDesc: '×™×¦×™××” ×ž×”×—×©×‘×•×Ÿ'
+                    editProfile: 'עריכת פרטים',
+                    editProfileDesc: 'שם, טלפון, סיסמה',
+                    payments: 'היסטוריית תשלומים',
+                    paymentsDesc: 'צפה בכל התשלומים שלך',
+                    myFaults: 'התקלות שלי',
+                    myFaultsDesc: 'תקלות שדיווחת',
+                    admin: 'לוח בקרה מנהל',
+                    adminDesc: 'ניהול הבניין',
+                    notifications: 'התראות',
+                    notificationsDesc: 'הגדרות push notifications',
+                    language: 'שפה',
+                    about: 'אודות',
+                    aboutDesc: 'גרסה ומידע',
+                    logout: 'התנתק',
+                    logoutDesc: 'יציאה מהחשבון'
                 },
-                nav: { home: '×‘×™×ª', faults: '×ª×§×œ×•×ª', notices: '×”×•×“×¢×•×ª', community: '×§×”×™×œ×”', profile: '×¤×¨×•×¤×™×œ' },
-                version: '×’×¨×¡×” 1.0.0'
+                nav: { home: 'בית', faults: 'תקלות', notices: 'הודעות', community: 'קהילה', profile: 'פרופיל' },
+                version: 'גרסה 1.0.0'
             },
             en: {
                 profile: 'Profile',
                 apartment: 'Apt',
-                building: 'HaMeshahrerim 18',
+                building: 'Sea Towers',
                 verified: 'Verified',
                 sections: {
                     account: 'Account',
@@ -404,8 +404,8 @@
             return window.APP_CONFIG || {
                 ADMIN_EMAIL: '',
                 ADMIN_EMAILS: [],
-                BUILDING_NAME: 'המשחררים 18',
-                BUILDING_NAME_EN: 'HaMeshahrerim 18'
+                BUILDING_NAME: 'הבניין שלי',
+                BUILDING_NAME_EN: 'My Building'
             };
         };
 
@@ -424,18 +424,18 @@
                     <div className="menu-label">{label}</div>
                     {desc && <div className="menu-desc">{desc}</div>}
                 </div>
-                <span className="menu-arrow">â†’</span>
+                <span className="menu-arrow">→</span>
             </a>
         );
 
         const BottomNav = () => {
             const { t } = useLanguage();
             const navItems = [
-                { id: 'home', icon: 'ðŸ ', label: t.nav.home, href: 'index.html' },
-                { id: 'faults', icon: 'ðŸ”§', label: t.nav.faults, href: 'faults.html' },
-                { id: 'notices', icon: 'ðŸ””', label: t.nav.notices, href: 'notices.html', badge: true },
-                { id: 'community', icon: 'ðŸ‘¥', label: t.nav.community, href: 'community.html' },
-                { id: 'profile', icon: 'ðŸ‘¤', label: t.nav.profile, href: 'profile.html', active: true }
+                { id: 'home', icon: '🏠', label: t.nav.home, href: 'index.html' },
+                { id: 'faults', icon: '🔧', label: t.nav.faults, href: 'faults.html' },
+                { id: 'notices', icon: '🔔', label: t.nav.notices, href: 'notices.html', badge: true },
+                { id: 'community', icon: '👥', label: t.nav.community, href: 'community.html' },
+                { id: 'profile', icon: '👤', label: t.nav.profile, href: 'profile.html', active: true }
             ];
 
             return (
@@ -459,10 +459,6 @@
             const { t, lang, setLang } = useLanguage();
             const [userProfile, setUserProfile] = useState(emptyUser);
             const [isLoading, setIsLoading] = useState(true);
-            const [showEditProfile, setShowEditProfile] = useState(false);
-            const [editFullName, setEditFullName] = useState('');
-            const [editPhone, setEditPhone] = useState('');
-            const [isSavingProfile, setIsSavingProfile] = useState(false);
 
             useEffect(() => {
                 const loadProfile = async () => {
@@ -481,33 +477,10 @@
                         return;
                     }
                     setUserProfile(profile);
-                    setEditFullName(profile.full_name || '');
-                    setEditPhone(profile.phone || '');
                     setIsLoading(false);
                 };
                 loadProfile();
             }, []);
-
-            const handleSaveProfile = async () => {
-                if (!window.AppAuth) return;
-                const user = await window.AppAuth.getCurrentUser();
-                if (!user) return;
-
-                setIsSavingProfile(true);
-                const { data, error } = await window.AppAuth.updateMyProfile(user.id, {
-                    full_name: editFullName.trim(),
-                    phone: editPhone.trim() || null
-                });
-                setIsSavingProfile(false);
-
-                if (error) {
-                    alert(error.message || 'Failed to update profile');
-                    return;
-                }
-
-                if (data) setUserProfile(data);
-                setShowEditProfile(false);
-            };
 
             const handleLogout = async (event) => {
                 event.preventDefault();
@@ -528,31 +501,13 @@
             return (
                 <div className="app-container">
                     <header className="profile-header">
-                        <button
-                            onClick={() => window.history.back()}
-                            style={{
-                                position: 'absolute',
-                                top: 'calc(var(--safe-top) + 12px)',
-                                left: '12px',
-                                border: 'none',
-                                background: 'rgba(255,255,255,0.9)',
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '12px',
-                                fontSize: '1.1rem',
-                                cursor: 'pointer'
-                            }}
-                            aria-label="Back"
-                        >
-                            ←
-                        </button>
-                        <div className="profile-avatar">ðŸ‘¤</div>
+                        <div className="profile-avatar">👤</div>
                         <h1 className="profile-name">{userProfile.full_name || userProfile.email}</h1>
                         <p className="profile-apartment">
-                            {t.apartment} {userProfile.apartment || '-'} • {(lang === 'he' ? (getConfig().BUILDING_NAME || 'המשחררים 18') : (getConfig().BUILDING_NAME_EN || 'HaMeshahrerim 18'))}
+                            {t.apartment} {userProfile.apartment} • {t.building}
                         </p>
                         <span className="profile-badge">
-                            âœ“ {t.verified}
+                            ✓ {t.verified}
                         </span>
                     </header>
 
@@ -560,9 +515,9 @@
                         <div className="menu-section">
                             <h3 className="menu-title">{t.sections.account}</h3>
                             <div className="menu-card">
-                                <MenuItem icon="âœï¸" label={t.menu.editProfile} desc={t.menu.editProfileDesc} onClick={(e) => { e.preventDefault(); setShowEditProfile(true); }} />
-                                <MenuItem icon="ðŸ’³" label={t.menu.payments} desc={t.menu.paymentsDesc} />
-                                <MenuItem icon="ðŸ“‹" label={t.menu.myFaults} desc={t.menu.myFaultsDesc} href="faults.html" />
+                                <MenuItem icon="✏️" label={t.menu.editProfile} desc={t.menu.editProfileDesc} />
+                                <MenuItem icon="💳" label={t.menu.payments} desc={t.menu.paymentsDesc} />
+                                <MenuItem icon="📋" label={t.menu.myFaults} desc={t.menu.myFaultsDesc} href="faults.html" />
                             </div>
                         </div>
 
@@ -571,7 +526,7 @@
                                 <h3 className="menu-title">{t.sections.building}</h3>
                                 <div className="menu-card">
                                     <MenuItem
-                                        icon="ðŸ‘‘"
+                                        icon="👑"
                                         label={t.menu.admin}
                                         desc={t.menu.adminDesc}
                                         href="admin.html"
@@ -584,8 +539,8 @@
                         <div className="menu-section">
                             <h3 className="menu-title">{t.sections.app}</h3>
                             <div className="menu-card">
-                                <MenuItem icon="ðŸ””" label={t.menu.notifications} desc={t.menu.notificationsDesc} />
-                                <MenuItem icon="â„¹ï¸" label={t.menu.about} desc={t.menu.aboutDesc} />
+                                <MenuItem icon="🔔" label={t.menu.notifications} desc={t.menu.notificationsDesc} />
+                                <MenuItem icon="ℹ️" label={t.menu.about} desc={t.menu.aboutDesc} />
                             </div>
                         </div>
 
@@ -594,20 +549,20 @@
                                 className={`lang-btn ${lang === 'he' ? 'active' : ''}`}
                                 onClick={() => setLang('he')}
                             >
-                                ðŸ‡®ðŸ‡± ×¢×‘×¨×™×ª
+                                🇮🇱 עברית
                             </button>
                             <button
                                 className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
                                 onClick={() => setLang('en')}
                             >
-                                ðŸ‡ºðŸ‡¸ English
+                                🇺🇸 English
                             </button>
                         </div>
 
                         <div className="menu-section" style={{ marginTop: 'var(--space-lg)' }}>
                             <div className="menu-card">
                                 <MenuItem
-                                    icon="ðŸšª"
+                                    icon="🚪"
                                     label={t.menu.logout}
                                     desc={t.menu.logoutDesc}
                                     href="auth.html"
@@ -621,41 +576,6 @@
                     </main>
 
                     <BottomNav />
-
-                    {showEditProfile && (
-                        <div
-                            onClick={() => setShowEditProfile(false)}
-                            style={{
-                                position: 'fixed',
-                                inset: 0,
-                                background: 'rgba(0,0,0,0.45)',
-                                zIndex: 1200,
-                                display: 'flex',
-                                alignItems: 'flex-end'
-                            }}
-                        >
-                            <div
-                                onClick={(e) => e.stopPropagation()}
-                                style={{
-                                    width: '100%',
-                                    maxWidth: '430px',
-                                    margin: '0 auto',
-                                    background: '#fff',
-                                    borderRadius: '20px 20px 0 0',
-                                    padding: '16px'
-                                }}
-                            >
-                                <div style={{ fontWeight: 800, marginBottom: '10px' }}>{t.menu.editProfile}</div>
-                                <div style={{ display: 'grid', gap: '10px' }}>
-                                    <input className="form-input" value={editFullName} onChange={(e) => setEditFullName(e.target.value)} placeholder={lang === 'he' ? 'שם מלא' : 'Full name'} />
-                                    <input className="form-input" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder={lang === 'he' ? 'טלפון' : 'Phone'} />
-                                    <button className="btn-primary" onClick={handleSaveProfile} disabled={isSavingProfile}>
-                                        {isSavingProfile ? (lang === 'he' ? 'שומר...' : 'Saving...') : (lang === 'he' ? 'שמור' : 'Save')}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };
