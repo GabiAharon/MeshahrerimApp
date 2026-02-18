@@ -188,6 +188,35 @@
             padding-bottom: calc(var(--safe-bottom) + var(--space-xl));
             position: relative;
             z-index: 1;
+            overflow: hidden;
+        }
+
+        .welcome-glow,
+        .welcome-glow-2 {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            animation: floatGlow 7s ease-in-out infinite;
+        }
+
+        .welcome-glow {
+            width: 220px;
+            height: 220px;
+            top: 12%;
+            right: -65px;
+            background: radial-gradient(circle at 30% 30%, rgba(212, 120, 92, 0.45), rgba(212, 120, 92, 0.06));
+            animation-delay: 0.2s;
+        }
+
+        .welcome-glow-2 {
+            width: 180px;
+            height: 180px;
+            bottom: 16%;
+            left: -45px;
+            background: radial-gradient(circle at 70% 70%, rgba(45, 90, 74, 0.4), rgba(45, 90, 74, 0.06));
+            animation-delay: 0.9s;
         }
 
         .welcome-content {
@@ -197,6 +226,8 @@
             justify-content: center;
             align-items: center;
             text-align: center;
+            position: relative;
+            z-index: 2;
         }
 
         .logo-container {
@@ -223,6 +254,7 @@
             justify-content: center;
             box-shadow: var(--shadow-lg), var(--shadow-glow);
             position: relative;
+            animation: logoPulse 2.8s ease-in-out infinite;
         }
 
         .logo::before {
@@ -273,6 +305,48 @@
             animation: slideUp 0.8s var(--ease-out-expo) 0.4s forwards;
             opacity: 0;
             transform: translateY(20px);
+            position: relative;
+            z-index: 2;
+        }
+
+        .welcome-actions .btn {
+            transform-origin: center;
+            animation: actionPop 0.7s var(--ease-out-expo) forwards;
+            opacity: 0;
+        }
+
+        .welcome-actions .btn:first-child { animation-delay: 0.55s; }
+        .welcome-actions .btn:last-child { animation-delay: 0.68s; }
+
+        @keyframes actionPop {
+            from {
+                opacity: 0;
+                transform: scale(0.94) translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-4px) scale(1.02); }
+        }
+
+        @keyframes floatGlow {
+            0% {
+                opacity: 0;
+                transform: translateY(12px) scale(0.92);
+            }
+            20%, 80% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-12px) scale(1.06);
+            }
         }
 
         /* ============================================
@@ -1115,6 +1189,8 @@
 
             return (
                 <div className="welcome-screen">
+                    <div className="welcome-glow"></div>
+                    <div className="welcome-glow-2"></div>
                     <button className="language-toggle-float" onClick={toggleLanguage}>
                         {lang === 'he' ? 'EN' : 'עב'}
                     </button>
