@@ -247,7 +247,7 @@
         .logo {
             width: 120px;
             height: 120px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #f5f7fb 100%);
             border-radius: var(--radius-xl);
             display: flex;
             align-items: center;
@@ -266,8 +266,18 @@
             z-index: -1;
         }
 
-        .logo-icon {
-            font-size: 3.5rem;
+        .logo-image {
+            width: 86px;
+            height: 86px;
+            object-fit: cover;
+            border-radius: 22px;
+            animation: logoImageFloat 2.8s ease-in-out infinite;
+            filter: drop-shadow(0 8px 20px rgba(45, 90, 74, 0.28));
+        }
+
+        @keyframes logoImageFloat {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.04) translateY(-2px); }
         }
 
         .welcome-title {
