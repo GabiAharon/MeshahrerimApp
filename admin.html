@@ -1180,153 +1180,65 @@
         // Translations
         const translations = {
             he: {
-                title: '??? ????',
-                admin: '????',
-                building: '???????? 18',
-                stats: { balance: '????', debtors: '??????', apartments: '?????' },
-                tabs: { finance: '?????', debtors: '??????', expenses: '??????', users: '???????', faults: '?????', notices: '??????', polls: '?????', professionals: '???? ?????', marketplace: '??? ??????', admins: '??????' },
+                title: 'לוח בקרה',
+                admin: 'מנהל',
+                building: 'המשחררים 18',
+                stats: { balance: 'יתרה', debtors: 'חייבים', apartments: 'דירות' },
+                tabs: { finance: 'כספים', debtors: 'חייבים', expenses: 'הוצאות', users: 'משתמשים', faults: 'תקלות', notices: 'הודעות', polls: 'סקרים', professionals: 'אנשי מקצוע', marketplace: 'לוח מודעות', admins: 'מנהלים' },
                 finance: {
-                    title: '????? ?????',
-                    period: '?????? 2025',
-                    balance: '???? ????',
-                    income: '??????',
-                    expenses: '??????',
-                    legend: { income: '??????', expenses: '??????' },
-                    months: ['???', '???', '???', '???']
+                    title: 'סיכום חודשי',
+                    period: 'פברואר 2025',
+                    balance: 'יתרת קופה',
+                    income: 'הכנסות',
+                    expenses: 'הוצאות',
+                    legend: { income: 'הכנסות', expenses: 'הוצאות' },
+                    months: ['ינו', 'פבר', 'מרץ', 'אפר']
                 },
                 debtors: {
-                    sendReminder: '??? ??????',
-                    sent: '????',
-                    apartment: '????',
-                    debt: '???',
-                    empty: '??? ?????? ????'
+                    sendReminder: 'שלח תזכורת',
+                    sent: 'נשלח',
+                    apartment: 'דירה',
+                    debt: 'חוב',
+                    empty: 'אין חייבים כרגע'
                 },
                 expenses: {
-                    add: '???? ?????',
-                    receipt: '???? ??????',
-                    categories: {
-                        cleaning: '??????',
-                        electricity: '????',
-                        water: '???',
-                        maintenance: '??????',
-                        gardening: '?????',
-                        other: '???'
-                    },
-                    form: {
-                        title: '????? ????',
-                        category: '???????',
-                        amount: '????',
-                        description: '?????',
-                        receipt: '????',
-                        uploadReceipt: '???? ????',
-                        submit: '???? ?????'
-                    },
-                    empty: '??? ?????? ?????'
+                    add: 'הוסף הוצאה',
+                    receipt: 'קבלה מצורפת',
+                    categories: { cleaning: 'ניקיון', electricity: 'חשמל', water: 'מים', maintenance: 'תחזוקה', gardening: 'גינון', other: 'אחר' },
+                    form: { title: 'הוצאה חדשה', category: 'קטגוריה', amount: 'סכום', description: 'תיאור', receipt: 'קבלה', uploadReceipt: 'העלה קבלה', submit: 'הוסף הוצאה' },
+                    empty: 'אין הוצאות עדיין'
                 },
                 users: {
-                    filter: { all: '???', pending: '???????', active: '??????' },
-                    status: { pending: '?????', active: '????', admin: '????' },
-                    apartment: '????',
-                    approve: '???',
-                    reject: '???',
-                    empty: '??? ??????? ?????? ?????'
+                    filter: { all: 'הכל', pending: 'ממתינים', active: 'פעילים' },
+                    status: { pending: 'ממתין', active: 'פעיל', admin: 'מנהל' },
+                    apartment: 'דירה', approve: 'אשר', reject: 'דחה', empty: 'אין משתמשים רשומים עדיין'
                 },
                 notices: {
-                    title: '????? ??????',
-                    templates: '?????? ??????',
-                    active: '?????? ??????',
-                    send: '??? ?????',
-                    sent: '????!',
-                    delete: '???',
-                    noActive: '??? ?????? ??????',
+                    title: 'שליחת הודעות',
+                    templates: 'תבניות מוכנות',
+                    active: 'הודעות פעילות',
+                    send: 'שלח הודעה',
+                    sent: 'נשלח!',
+                    delete: 'מחק',
+                    noActive: 'אין הודעות פעילות',
                     templateList: [
-                        { id: 'water', icon: '??', title: '????? ??? ???????', type: 'urgent' },
-                        { id: 'elevator', icon: '??', title: '?????? ?????', type: 'maintenance' },
-                        { id: 'meeting', icon: '??', title: '????? ??????', type: 'event' },
-                        { id: 'assembly-urgent', icon: '??', title: '????? ?????? - ????? ?????', type: 'event' },
-                        { id: 'cleaning', icon: '??', title: '????? ???? ??????', type: 'info' },
-                        { id: 'electricity', icon: '?', title: '????? ????', type: 'urgent' },
-                        { id: 'parking', icon: '??', title: '????? ?? ????', type: 'info' },
-                        { id: 'pest', icon: '??', title: '????? ??????', type: 'maintenance' },
-                        { id: 'event', icon: '??', title: '????? ??????', type: 'event' }
+                        { id: 'water', icon: '', title: 'הפסקת מים מתוכננת', type: 'urgent' },
+                        { id: 'elevator', icon: '', title: 'תחזוקת מעלית', type: 'maintenance' },
+                        { id: 'meeting', icon: '', title: 'אסיפת דיירים', type: 'event' },
+                        { id: 'assembly-urgent', icon: '', title: 'אסיפת דיירים - הודעה חשובה', type: 'event' },
+                        { id: 'cleaning', icon: '', title: 'עדכון שעות ניקיון', type: 'info' },
+                        { id: 'electricity', icon: '', title: 'הפסקת חשמל', type: 'urgent' },
+                        { id: 'parking', icon: '', title: 'הודעה על חניה', type: 'info' },
+                        { id: 'pest', icon: '', title: 'הדברה בבניין', type: 'maintenance' },
+                        { id: 'event', icon: '', title: 'אירוע קהילתי', type: 'event' }
                     ]
                 },
-                faults: {
-                    title: '????? ?????',
-                    all: '?? ??????',
-                    open: '??????',
-                    inProgress: '??????',
-                    fixed: '?????',
-                    empty: '??? ?????',
-                    markProgress: '???? ??????',
-                    markFixed: '??? ?????',
-                    delete: '???'
-                },
-                polls: {
-                    title: '????? ?????',
-                    create: '??? ??? ???',
-                    question: '????',
-                    options: '????????',
-                    addOption: '???? ??????',
-                    active: '????? ??????',
-                    ended: '????? ????????',
-                    votes: '??????',
-                    close: '???? ???',
-                    delete: '???',
-                    empty: '??? ????? ??????',
-                    placeholder: '???? ?? ?????...',
-                    optionPlaceholder: '??????'
-                },
-                professionals: {
-                    title: '????? ???? ?????',
-                    add: '???? ??? ?????',
-                    name: '??',
-                    profession: '?????',
-                    phone: '?????',
-                    description: '?????',
-                    pending: '??????? ??????',
-                    approved: '???????',
-                    approve: '???',
-                    reject: '???',
-                    delete: '???',
-                    empty: '??? ???? ?????',
-                    professions: {
-                        plumber: '?????????',
-                        electrician: '??????',
-                        handyman: '??? ??????',
-                        cleaner: '????',
-                        painter: '????',
-                        locksmith: '??????',
-                        ac: '????? ?????',
-                        other: '???'
-                    }
-                },
-                marketplace: {
-                    title: '????? ??? ??????',
-                    active: '?????? ??????',
-                    all: '???',
-                    sell: '??????',
-                    buy: '?????',
-                    give: '???',
-                    seek: '????',
-                    delete: '???',
-                    empty: '??? ?????? ??????',
-                    by: '???'
-                },
-                nav: { dashboard: '????', residents: '??????', faults: '?????', settings: '??????', exit: '?????' },
-                admins: {
-                    title: '????? ??????',
-                    mainAdmin: '???? ????',
-                    additionalAdmins: '?????? ??????',
-                    noAdditional: '??? ?????? ??????',
-                    inviteTitle: '????? ???? ???',
-                    generateLink: '??? ????? ?????',
-                    copyLink: '???? ?????',
-                    copied: '?????!',
-                    linkExpiry: '?????? ??? ?-24 ????',
-                    inviteInstructions: '??? ?? ?????? ????? ????. ???? ?????? ???? ?????? ????.',
-                    you: '(???)'
-                }
+                faults: { title: 'ניהול תקלות', all: 'כל התקלות', open: 'פתוחות', inProgress: 'בטיפול', fixed: 'טופלו', empty: 'אין תקלות', markProgress: 'העבר לטיפול', markFixed: 'סמן כטופל', delete: 'מחק' },
+                polls: { title: 'ניהול סקרים', create: 'צור סקר חדש', question: 'שאלה', options: 'אפשרויות', addOption: 'הוסף אפשרות', active: 'סקרים פעילים', ended: 'סקרים שהסתיימו', votes: 'הצבעות', close: 'סגור סקר', delete: 'מחק', empty: 'אין סקרים פעילים', placeholder: 'הקלד את השאלה...', optionPlaceholder: 'אפשרות' },
+                professionals: { title: 'ניהול אנשי מקצוע', add: 'הוסף איש מקצוע', name: 'שם', profession: 'מקצוע', phone: 'טלפון', description: 'תיאור', pending: 'ממתינים לאישור', approved: 'מאושרים', approve: 'אשר', reject: 'דחה', delete: 'מחק', empty: 'אין אנשי מקצוע', professions: { plumber: 'אינסטלטור', electrician: 'חשמלאי', handyman: 'איש תחזוקה', cleaner: 'מנקה', painter: 'צבעי', locksmith: 'מנעולן', ac: 'מיזוג אוויר', other: 'אחר' } },
+                marketplace: { title: 'ניהול לוח מודעות', active: 'מודעות פעילות', all: 'הכל', sell: 'למכירה', buy: 'קנייה', give: 'לתת', seek: 'מחפש', delete: 'מחק', empty: 'אין מודעות פעילות', by: 'מאת' },
+                nav: { dashboard: 'בקרה', residents: 'דיירים', faults: 'תקלות', settings: 'הגדרות', exit: 'יציאה' },
+                admins: { title: 'ניהול מנהלים', mainAdmin: 'מנהל ראשי', additionalAdmins: 'מנהלים נוספים', noAdditional: 'אין מנהלים נוספים', inviteTitle: 'הזמנת מנהל חדש', generateLink: 'צור קישור הזמנה', copyLink: 'העתק קישור', copied: 'הועתק!', linkExpiry: 'הקישור תקף ל-24 שעות', inviteInstructions: 'שלח את הקישור למנהל החדש. לאחר הרישום יקבל הרשאות מנהל.', you: '(אתה)' }
             },
             en: {
                 title: 'Dashboard',
