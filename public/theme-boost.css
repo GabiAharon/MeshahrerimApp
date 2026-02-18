@@ -1,41 +1,37 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap');
+
 :root {
-  --boost-bg-1: #fff5ee;
-  --boost-bg-2: #f8eee5;
-  --boost-ink: #2c241f;
-  --boost-ink-soft: #6e5c4d;
-  --boost-surface: rgba(255, 255, 255, 0.78);
-  --boost-surface-strong: rgba(255, 255, 255, 0.9);
-  --boost-border: rgba(120, 88, 67, 0.18);
-  --boost-shadow-sm: 0 8px 24px rgba(62, 38, 24, 0.08);
-  --boost-shadow-lg: 0 22px 54px rgba(62, 38, 24, 0.16);
-  --boost-glow: 0 0 0 1px rgba(255, 255, 255, 0.38) inset;
-  --boost-primary: #cb6f4f;
-  --boost-primary-deep: #a95338;
-  --boost-mint: #3e7865;
-  --boost-ok: #2f8a67;
-  --boost-warn: #bc8b2f;
-  --boost-danger: #b14f4f;
+  --neo-bg: #f4f1ec;
+  --neo-paper: #fffdf9;
+  --neo-ink: #1f2933;
+  --neo-muted: #5f6b76;
+  --neo-primary: #0f6a5f;
+  --neo-primary-strong: #0a4f47;
+  --neo-accent: #ff7a3d;
+  --neo-border: #d5d9de;
+  --neo-shadow-soft: 0 10px 30px rgba(15, 35, 52, 0.08);
+  --neo-shadow-hard: 0 20px 50px rgba(15, 35, 52, 0.16);
 }
 
 html,
 body {
+  font-family: 'Assistant', sans-serif !important;
   background:
-    radial-gradient(1200px 520px at 8% -5%, rgba(203, 111, 79, 0.2) 0%, transparent 62%),
-    radial-gradient(900px 460px at 105% 10%, rgba(62, 120, 101, 0.18) 0%, transparent 64%),
-    linear-gradient(180deg, var(--boost-bg-1) 0%, var(--boost-bg-2) 100%) !important;
-  color: var(--boost-ink) !important;
+    radial-gradient(1200px 420px at 10% -5%, rgba(255, 122, 61, 0.15) 0%, transparent 60%),
+    radial-gradient(1200px 460px at 95% -20%, rgba(15, 106, 95, 0.18) 0%, transparent 58%),
+    linear-gradient(180deg, #f7f4ef 0%, #f0ede7 100%) !important;
+  color: var(--neo-ink) !important;
 }
 
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
+  opacity: 0.12;
+  background-image: linear-gradient(45deg, rgba(31, 41, 51, 0.18) 1px, transparent 1px);
+  background-size: 12px 12px;
   z-index: 0;
-  opacity: 0.18;
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(70, 52, 38, 0.55) 1px, transparent 0);
-  background-size: 4px 4px;
 }
 
 #root,
@@ -45,49 +41,32 @@ body::before {
 }
 
 .app-container {
-  border: 1px solid var(--boost-border);
-  box-shadow: var(--boost-shadow-lg), var(--boost-glow);
-  backdrop-filter: blur(8px);
+  border-inline: 1px solid rgba(66, 76, 89, 0.15);
+  box-shadow: var(--neo-shadow-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18));
 }
 
 .page-header,
 .profile-header {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 247, 239, 0.75) 100%) !important;
-  border-bottom: 1px solid var(--boost-border) !important;
-  box-shadow: var(--boost-shadow-sm);
+    linear-gradient(130deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 241, 234, 0.9) 100%) !important;
+  border-bottom: 1px solid rgba(80, 93, 106, 0.18) !important;
+  box-shadow: var(--neo-shadow-soft);
 }
 
-/* Keep strong contrast in admin header and prevent white-on-white regressions */
 .page-header .page-title,
 .page-header .building-info,
-.page-header .admin-badge {
-  color: var(--boost-ink) !important;
-}
-
-/* Fix profile hero contrast (was white text on very light background) */
+.page-header .admin-badge,
 .profile-header .profile-name,
 .profile-header .profile-apartment,
 .profile-header .profile-badge {
-  color: var(--boost-ink) !important;
+  color: var(--neo-ink) !important;
 }
 
-.profile-header .profile-apartment {
-  color: var(--boost-ink-soft) !important;
-}
-
-.profile-header .profile-badge {
-  background: rgba(62, 120, 101, 0.14) !important;
-  border: 1px solid rgba(62, 120, 101, 0.28);
-}
-
+.profile-header .profile-badge,
 .page-header .admin-badge {
-  background: rgba(203, 111, 79, 0.16) !important;
-  border: 1px solid rgba(203, 111, 79, 0.35);
-}
-
-.main-content {
-  padding-top: 22px !important;
+  background: rgba(15, 106, 95, 0.11) !important;
+  border: 1px solid rgba(15, 106, 95, 0.35);
 }
 
 .ticket-card,
@@ -101,29 +80,32 @@ body::before {
 .stat-card,
 .modal-content,
 .invite-section,
-.admin-management-card {
-  background: var(--boost-surface) !important;
-  border: 1px solid var(--boost-border);
-  box-shadow: var(--boost-shadow-sm);
-  backdrop-filter: blur(8px);
+.admin-management-card,
+.empty-state,
+.no-admins-message {
+  background: var(--neo-paper) !important;
+  border: 1px solid var(--neo-border) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--neo-shadow-soft);
 }
 
 .ticket-card:hover,
 .notice-card:hover,
 .user-card:hover,
 .debtor-card:hover,
-.menu-item:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--boost-shadow-lg);
+.menu-item:hover,
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--neo-shadow-hard);
 }
 
 .btn-primary,
 .btn-submit,
 .btn-generate,
 .btn-send-notice {
-  background: linear-gradient(135deg, var(--boost-primary) 0%, var(--boost-primary-deep) 100%) !important;
-  border: 1px solid rgba(120, 52, 33, 0.18) !important;
-  box-shadow: 0 10px 24px rgba(169, 83, 56, 0.28);
+  background: linear-gradient(135deg, var(--neo-primary) 0%, var(--neo-primary-strong) 100%) !important;
+  border: 1px solid rgba(6, 60, 54, 0.45) !important;
+  color: #fff !important;
 }
 
 .btn-secondary,
@@ -133,9 +115,18 @@ body::before {
 .tab,
 .section-tab,
 .filter-pill {
-  background: var(--boost-surface-strong) !important;
-  border: 1px solid var(--boost-border) !important;
-  color: var(--boost-ink) !important;
+  background: #fff !important;
+  border: 1px solid var(--neo-border) !important;
+  color: var(--neo-ink) !important;
+}
+
+.tab.active,
+.section-tab.active,
+.filter-pill.active,
+.btn-copy.copied {
+  background: linear-gradient(135deg, var(--neo-accent) 0%, #f2611d 100%) !important;
+  border-color: transparent !important;
+  color: #fff !important;
 }
 
 .section-tabs {
@@ -144,102 +135,97 @@ body::before {
   row-gap: 8px;
 }
 
-.section-tab {
-  min-height: 38px;
-}
-
-.tab.active,
-.section-tab.active,
-.filter-pill.active,
-.btn-copy.copied {
-  background: linear-gradient(135deg, var(--boost-mint) 0%, #2f6454 100%) !important;
-  color: #fff !important;
-  border-color: transparent !important;
-}
-
 .form-input,
 .form-textarea,
 .form-select {
-  background: rgba(255, 255, 255, 0.84) !important;
-  border: 1px solid var(--boost-border) !important;
-  color: var(--boost-ink) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  background: #fff !important;
+  border: 1px solid var(--neo-border) !important;
+  color: var(--neo-ink) !important;
 }
 
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
-  border-color: rgba(203, 111, 79, 0.65) !important;
-  box-shadow: 0 0 0 4px rgba(203, 111, 79, 0.14) !important;
+  border-color: rgba(15, 106, 95, 0.75) !important;
+  box-shadow: 0 0 0 4px rgba(15, 106, 95, 0.18) !important;
 }
 
 .bottom-nav {
   margin: 0 auto 10px auto;
-  width: calc(100% - 20px);
-  border-radius: 18px !important;
-  border: 1px solid var(--boost-border);
-  background: rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(72, 46, 28, 0.14);
-}
-
-.nav-item.active .nav-icon {
-  transform: translateY(-2px) scale(1.06);
+  width: calc(100% - 16px);
+  border-radius: 20px !important;
+  border: 1px solid var(--neo-border) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 18px 42px rgba(15, 35, 52, 0.18);
 }
 
 .nav-item.active .nav-label {
-  color: var(--boost-primary) !important;
-  font-weight: 700 !important;
+  color: var(--neo-accent) !important;
+  font-weight: 800 !important;
+}
+
+.nav-item.active .nav-icon {
+  transform: scale(1.08) translateY(-2px);
 }
 
 .menu-title,
 .section-title,
 .admin-section-title,
 .form-label,
-.invite-title {
-  color: var(--boost-ink) !important;
+.invite-title,
+.user-name,
+.notice-title,
+.page-title {
+  color: var(--neo-ink) !important;
+  font-weight: 800 !important;
 }
 
 .user-details,
 .expense-date,
 .invite-instructions,
 .no-admins-message,
-.empty-text {
-  color: var(--boost-ink-soft) !important;
-}
-
-.empty-state,
-.no-admins-message {
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px dashed rgba(133, 100, 78, 0.35);
-  border-radius: 18px;
+.empty-text,
+.notice-preview,
+.stat-label,
+.building-info {
+  color: var(--neo-muted) !important;
 }
 
 .ticket-status.open,
 .user-status.pending {
-  background: rgba(188, 139, 47, 0.15) !important;
-  color: var(--boost-warn) !important;
+  background: rgba(255, 122, 61, 0.14) !important;
+  color: #c4511f !important;
 }
 
 .ticket-status.progress {
-  background: rgba(62, 120, 101, 0.15) !important;
-  color: var(--boost-mint) !important;
+  background: rgba(15, 106, 95, 0.14) !important;
+  color: var(--neo-primary) !important;
 }
 
 .ticket-status.fixed,
 .user-status.active {
-  background: rgba(47, 138, 103, 0.15) !important;
-  color: var(--boost-ok) !important;
+  background: rgba(36, 150, 90, 0.14) !important;
+  color: #1a7e4d !important;
 }
 
 .user-status.admin {
-  background: rgba(169, 83, 56, 0.15) !important;
-  color: var(--boost-primary-deep) !important;
+  background: rgba(99, 102, 241, 0.14) !important;
+  color: #423acb !important;
+}
+
+.main-content,
+.profile-main {
+  animation: fadeRise 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fadeRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 a,
 button {
-  transition: all 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 button:focus-visible,
@@ -247,14 +233,8 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgba(62, 120, 101, 0.38);
+  outline: 3px solid rgba(255, 122, 61, 0.5);
   outline-offset: 2px;
-}
-
-@media (min-width: 768px) {
-  .app-container {
-    border-radius: 26px !important;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1141,35 +1141,111 @@
         // Quick Actions
         const QuickActions = () => {
             const { t } = useLanguage();
+            const [showEmergencyOptions, setShowEmergencyOptions] = useState(false);
 
             const handleReportFault = () => {
                 window.location.href = 'faults.html?action=new';
             };
 
             const handleEmergency = () => {
-                // Show emergency contacts modal or call
-                const emergencyNumber = '102'; // Building security or emergency
-                if (confirm(t.actions.emergencyConfirm || 'התקשר לחירום?')) {
-                    window.location.href = `tel:${emergencyNumber}`;
-                }
+                setShowEmergencyOptions(true);
             };
 
+            const emergencyServices = [
+                { number: '100', name: 'משטרה' },
+                { number: '101', name: 'מד״א' },
+                { number: '102', name: 'כבאות והצלה' },
+                { number: '106', name: 'מוקד עירוני' }
+            ];
+
             return (
-                <section className="quick-actions">
-                    <h2 className="section-title">{t.actions.title}</h2>
-                    <div className="actions-grid">
-                        <button className="action-button" onClick={handleReportFault}>
-                            <div className="action-icon fault">🔧</div>
-                            <span className="action-label">{t.actions.report}</span>
-                            <span className="action-sublabel">{t.actions.reportSub}</span>
-                        </button>
-                        <button className="action-button" onClick={handleEmergency}>
-                            <div className="action-icon emergency">🚨</div>
-                            <span className="action-label">{t.actions.emergency}</span>
-                            <span className="action-sublabel">{t.actions.emergencySub}</span>
-                        </button>
-                    </div>
-                </section>
+                <>
+                    <section className="quick-actions">
+                        <h2 className="section-title">{t.actions.title}</h2>
+                        <div className="actions-grid">
+                            <button className="action-button" onClick={handleReportFault}>
+                                <div className="action-icon fault">🔧</div>
+                                <span className="action-label">{t.actions.report}</span>
+                                <span className="action-sublabel">{t.actions.reportSub}</span>
+                            </button>
+                            <button className="action-button" onClick={handleEmergency}>
+                                <div className="action-icon emergency">🚨</div>
+                                <span className="action-label">{t.actions.emergency}</span>
+                                <span className="action-sublabel">{t.actions.emergencySub}</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    {showEmergencyOptions && (
+                        <div
+                            onClick={() => setShowEmergencyOptions(false)}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                background: 'rgba(0,0,0,0.45)',
+                                zIndex: 1200,
+                                display: 'flex',
+                                alignItems: 'flex-end'
+                            }}
+                        >
+                            <div
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    width: '100%',
+                                    maxWidth: '430px',
+                                    margin: '0 auto',
+                                    background: '#fff',
+                                    borderRadius: '20px 20px 0 0',
+                                    padding: '16px',
+                                    borderTop: '2px solid rgba(15, 106, 95, 0.18)',
+                                    boxShadow: '0 -20px 40px rgba(0,0,0,0.18)'
+                                }}
+                            >
+                                <div style={{ fontWeight: 800, marginBottom: '10px', fontSize: '1rem' }}>
+                                    בחירת שירות חירום
+                                </div>
+                                <div style={{ display: 'grid', gap: '8px' }}>
+                                    {emergencyServices.map((item) => (
+                                        <a
+                                            key={item.number}
+                                            href={`tel:${item.number}`}
+                                            style={{
+                                                textDecoration: 'none',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                padding: '12px 14px',
+                                                border: '1px solid #d5d9de',
+                                                borderRadius: '12px',
+                                                color: '#1f2933',
+                                                fontWeight: 700,
+                                                background: '#fff'
+                                            }}
+                                        >
+                                            <span>{item.name}</span>
+                                            <span>{item.number}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setShowEmergencyOptions(false)}
+                                    style={{
+                                        marginTop: '10px',
+                                        width: '100%',
+                                        border: '1px solid #d5d9de',
+                                        borderRadius: '12px',
+                                        padding: '10px',
+                                        background: '#f8fafb',
+                                        color: '#334155',
+                                        fontWeight: 700
+                                    }}
+                                >
+                                    סגור
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
             );
         };
 
