@@ -175,6 +175,7 @@
             display: flex;
             width: max-content;
             animation: tickerMove 26s linear infinite;
+            transform: translate3d(0,0,0);
             will-change: transform;
         }
 
@@ -229,7 +230,7 @@
 
         @media (prefers-reduced-motion: reduce) {
             .news-ticker-track {
-                animation: none;
+                animation: tickerMove 30s linear infinite !important;
             }
         }
 
@@ -906,7 +907,7 @@
                     night: 'לילה טוב'
                 },
                 apartment: 'דירה',
-                building: 'מגדלי הים',
+                building: 'המשחררים 18',
                 payment: {
                     title: 'סטטוס תשלום',
                     year: '2025',
@@ -948,7 +949,7 @@
                     night: 'Good night'
                 },
                 apartment: 'Apt',
-                building: 'Sea Towers',
+                building: 'Meshahrerim 18',
                 payment: {
                     title: 'Payment Status',
                     year: '2025',
@@ -1019,8 +1020,8 @@
             return window.APP_CONFIG || {
                 ADMIN_EMAIL: '',
                 ADMIN_EMAILS: [],
-                BUILDING_NAME: 'הבניין שלי',
-                BUILDING_NAME_EN: 'My Building'
+                BUILDING_NAME: 'המשחררים 18',
+                BUILDING_NAME_EN: 'Meshahrerim 18'
             };
         };
 

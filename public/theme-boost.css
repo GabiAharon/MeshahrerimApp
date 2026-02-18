@@ -20,9 +20,9 @@ body {
   font-family: 'Assistant', sans-serif !important;
   color: var(--fd-ink) !important;
   background:
-    radial-gradient(900px 360px at 12% -10%, rgba(249, 115, 22, 0.22) 0%, transparent 62%),
-    radial-gradient(1000px 420px at 96% -14%, rgba(15, 118, 110, 0.2) 0%, transparent 64%),
-    linear-gradient(180deg, #f8fafc 0%, #eef3f6 100%) !important;
+    radial-gradient(220px 220px at 92% 22%, rgba(249, 115, 22, 0.12) 0%, transparent 72%),
+    radial-gradient(180px 180px at 9% 78%, rgba(15, 118, 110, 0.14) 0%, transparent 70%),
+    linear-gradient(180deg, #f7f3ef 0%, #f1ede8 100%) !important;
 }
 
 body::before {
@@ -291,13 +291,3 @@ select:focus-visible {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
