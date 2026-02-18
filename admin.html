@@ -1606,15 +1606,28 @@
                 if (!window.AppAuth) return;
                 setIsSending(true);
 
-                const title = lang === 'he' ? `\u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9 ${year}` : `Finance update ${year}`;
-                const msg = lang === 'he'
-                    ? `\u05d9\u05ea\u05e8\u05d4: ${currency}${summary.balance.toLocaleString()} | \u05d4\u05db\u05e0\u05e1\u05d5\u05ea: ${currency}${summary.collected.toLocaleString()} | \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea: ${currency}${summary.expenses.toLocaleString()}`
-                    : `Balance: ${currency}${summary.balance.toLocaleString()} | Collected: ${currency}${summary.collected.toLocaleString()} | Expenses: ${currency}${summary.expenses.toLocaleString()}`;
+                try {
+                    const title = lang === 'he' ? `\u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9 ${year}` : `Finance update ${year}`;
+                    const msg = lang === 'he'
+                        ? `\u05d9\u05ea\u05e8\u05d4: ${currency}${summary.balance.toLocaleString()} | \u05d4\u05db\u05e0\u05e1\u05d5\u05ea: ${currency}${summary.collected.toLocaleString()} | \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea: ${currency}${summary.expenses.toLocaleString()}`
+                        : `Balance: ${currency}${summary.balance.toLocaleString()} | Collected: ${currency}${summary.collected.toLocaleString()} | Expenses: ${currency}${summary.expenses.toLocaleString()}`;
 
-                await window.AppAuth.createNotice({ title, content: msg, type: 'info' });
-                await window.AppAuth.sendPushBroadcast({ title, message: msg, url: '/notices.html' });
-                setIsSending(false);
-                alert(lang === 'he' ? '\u05e0\u05e9\u05dc\u05d7 \u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9\u05dd \u05dc\u05d3\u05d9\u05d9\u05e8\u05d9\u05dd' : 'Finance update sent to residents');
+                    const noticeResult = await window.AppAuth.createNotice({ title, content: msg, type: 'info' });
+                    if (noticeResult?.error) {
+                        alert(noticeResult.error.message || (lang === 'he' ? '\u05e9\u05dc\u05d9\u05d7\u05ea \u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to create notice'));
+                        return;
+                    }
+
+                    const pushResult = await window.AppAuth.sendPushBroadcast({ title, message: msg, url: '/notices.html' });
+                    if (pushResult?.error) {
+                        alert((lang === 'he' ? '\u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e0\u05e9\u05de\u05e8\u05d4, \u05d0\u05d1\u05dc \u05e4\u05d5\u05e9 \u05e0\u05db\u05e9\u05dc: ' : 'Notice was saved but push failed: ') + (pushResult.error.message || 'Unknown error'));
+                        return;
+                    }
+
+                    alert(lang === 'he' ? '\u05e0\u05e9\u05dc\u05d7 \u05e2\u05d3\u05db\u05d5\u05df \u05db\u05e1\u05e4\u05d9\u05dd \u05dc\u05d3\u05d9\u05d9\u05e8\u05d9\u05dd' : 'Finance update sent to residents');
+                } finally {
+                    setIsSending(false);
+                }
             };
 
             const mergedCountPreview = uniqueApartments([...registeredApartments, ...parseApartments(extraApartmentsInput)]).length;
@@ -2316,10 +2329,15 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         return;
                     }
 
-                    await window.AppAuth.sendPushBroadcast({
+                    const pushResult = await window.AppAuth.sendPushBroadcast({
                         title: template.title,
                         message: template.description || template.title
                     });
+                    if (pushResult?.error) {
+                        setSendingStatus('idle');
+                        alert((lang === 'he' ? '\u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e0\u05e9\u05de\u05e8\u05d4, \u05d0\u05d1\u05dc \u05e4\u05d5\u05e9 \u05e0\u05db\u05e9\u05dc: ' : 'Notice was saved but push failed: ') + (pushResult.error.message || 'Unknown error'));
+                        return;
+                    }
 
                     await loadActiveNotices();
                 }
@@ -2345,10 +2363,14 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         return;
                     }
 
-                    await window.AppAuth.sendPushBroadcast({
+                    const pushResult = await window.AppAuth.sendPushBroadcast({
                         title: customTitle.trim(),
                         message: customContent.trim() || customTitle.trim()
                     });
+                    if (pushResult?.error) {
+                        alert((lang === 'he' ? '\u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e0\u05e9\u05de\u05e8\u05d4, \u05d0\u05d1\u05dc \u05e4\u05d5\u05e9 \u05e0\u05db\u05e9\u05dc: ' : 'Notice was saved but push failed: ') + (pushResult.error.message || 'Unknown error'));
+                        return;
+                    }
 
                     await loadActiveNotices();
                 }

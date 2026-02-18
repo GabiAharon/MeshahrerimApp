@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mybuilding-cache-v9';
+const CACHE_NAME = 'mybuilding-cache-v10';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -13,6 +13,8 @@ const APP_SHELL = [
   '/supabase.js',
   '/push.js',
   '/pwa.js',
+  '/onesignal/OneSignalSDKWorker.js',
+  '/onesignal/OneSignalSDKUpdaterWorker.js',
   '/icons/icon-192-v4.png',
   '/icons/icon-512-v4.png',
   '/icons/app-logo-cropped.png',

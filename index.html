@@ -1564,8 +1564,15 @@
 
                         if (profile?.is_approved) {
                             if (window.AppPush) {
-                                await window.AppPush.init(currentUser.id);
-                                await window.AppPush.promptForPermission();
+                                const initResult = await window.AppPush.init(currentUser.id);
+                                if (initResult?.error) {
+                                    console.warn('Push init skipped:', initResult.error.message || initResult.error);
+                                } else {
+                                    const permissionResult = await window.AppPush.promptForPermission();
+                                    if (permissionResult?.error) {
+                                        console.warn('Push permission skipped:', permissionResult.error.message || permissionResult.error);
+                                    }
+                                }
                             }
                             setAuthState('approved');
                         } else {
