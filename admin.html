@@ -667,14 +667,16 @@
         /* Filter Pills */
         .filter-pills {
             display: flex;
+            flex-wrap: wrap;
             gap: var(--space-sm);
             margin-bottom: var(--space-md);
         }
 
         .filter-pill {
             padding: var(--space-xs) var(--space-md);
+            min-height: 38px;
             background: white;
-            border: none;
+            border: 1px solid var(--color-sand-dark);
             border-radius: var(--radius-full);
             font-family: var(--font-body);
             font-size: 0.75rem;
@@ -682,11 +684,14 @@
             color: var(--color-text-muted);
             cursor: pointer;
             transition: all 0.3s var(--ease-out-expo);
+            white-space: nowrap;
         }
 
         .filter-pill.active {
             background: var(--color-primary);
             color: white;
+            border-color: transparent;
+            box-shadow: var(--shadow-sm);
         }
 
         /* Modal */
@@ -2557,7 +2562,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             };
 
             const handleDeletePoll = async (id) => {
-                if (!confirm(lang === 'he' ? '????? ?? ?????' : 'Delete this poll?')) return;
+                if (!confirm(lang === 'he' ? '\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05ea \u05d4\u05e1\u05e7\u05e8?' : 'Delete this poll?')) return;
                 const { error } = await window.AppAuth.deletePoll(id);
                 if (error) {
                     alert(error.message || 'Failed to delete poll');
@@ -2586,7 +2591,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     fontWeight: 600
                                 }}
                             >
-                                {showForm ? '?' : '?'}
+                                {showForm ? (lang === 'he' ? '\u05e1\u05d2\u05d5\u05e8' : 'Close') : (lang === 'he' ? '\u05d4\u05d5\u05e1\u05e3' : 'Add')}
                             </button>
                         </div>
 
@@ -2643,7 +2648,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                                 fontSize: '0.8125rem'
                                             }}
                                         >
-                                            ? {t.polls.addOption}
+                                            + {t.polls.addOption}
                                         </button>
                                     )}
                                 </div>
@@ -2652,7 +2657,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     onClick={handleCreatePoll}
                                     disabled={!question.trim() || options.filter((o) => o.trim()).length < 2}
                                 >
-                                    ?? {t.polls.create}
+                                    {t.polls.create}
                                 </button>
                             </div>
                         )}
@@ -2712,14 +2717,14 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [isLoading, setIsLoading] = useState(true);
 
             const professionIcons = {
-                plumber: '??',
-                electrician: '?',
-                handyman: '??',
-                cleaner: '??',
-                painter: '??',
-                locksmith: '??',
-                ac: '??',
-                other: '??'
+                plumber: '🔧',
+                electrician: '⚡',
+                handyman: '🛠',
+                cleaner: '🧹',
+                painter: '🎨',
+                locksmith: '🔑',
+                ac: '❄️',
+                other: '👷'
             };
 
             const loadProfessionals = async () => {
@@ -2781,7 +2786,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             };
 
             const handleDelete = async (id) => {
-                if (!confirm(lang === 'he' ? '??????' : 'Delete?')) return;
+                if (!confirm(lang === 'he' ? '\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05d9\u05e9 \u05de\u05e7\u05e6\u05d5\u05e2?' : 'Delete professional?')) return;
                 const { error } = await window.AppAuth.deleteProfessional(id);
                 if (error) {
                     alert(error.message || 'Failed to delete');
@@ -2814,7 +2819,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     fontWeight: 600
                                 }}
                             >
-                                {showForm ? '?' : '?'}
+                                {showForm ? (lang === 'he' ? '\u05e1\u05d2\u05d5\u05e8' : 'Close') : (lang === 'he' ? '\u05d4\u05d5\u05e1\u05e3' : 'Add')}
                             </button>
                         </div>
 
@@ -2822,12 +2827,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             <div style={{ marginTop: 'var(--space-md)' }}>
                                 <div className="form-group">
                                     <label className="form-label">{t.professionals.name}</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    />
+                                    <input type="text" className="form-input" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t.professionals.profession}</label>
@@ -2844,26 +2844,14 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t.professionals.phone}</label>
-                                    <input
-                                        type="tel"
-                                        className="form-input"
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        dir="ltr"
-                                    />
+                                    <input type="tel" className="form-input" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} dir="ltr" />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t.professionals.description}</label>
-                                    <textarea
-                                        className="form-input"
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        rows={2}
-                                        style={{ resize: 'vertical' }}
-                                    />
+                                    <textarea className="form-input" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} style={{ resize: 'vertical' }} />
                                 </div>
                                 <button className="btn-send-notice" onClick={handleAddProfessional} disabled={!formData.name.trim() || !formData.phone.trim()}>
-                                    ?? {t.professionals.add}
+                                    {t.professionals.add}
                                 </button>
                             </div>
                         )}
@@ -2872,7 +2860,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                     <div className="admin-management-card">
                         <div className="filter-pills" style={{ marginBottom: 'var(--space-md)' }}>
                             <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-                                {lang === 'he' ? '???' : 'All'} ({professionals.length})
+                                {lang === 'he' ? '\u05d4\u05db\u05dc' : 'All'} ({professionals.length})
                             </button>
                             <button className={`filter-pill ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>
                                 {t.professionals.pending} ({professionals.filter((p) => !p.isApproved).length})
@@ -2890,7 +2878,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             filteredPros.map((pro) => (
                                 <div key={pro.id} className="user-card">
                                     <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
-                                        {professionIcons[pro.profession] || '??'}
+                                        {professionIcons[pro.profession] || '👷'}
                                     </div>
                                     <div className="user-info">
                                         <div className="user-name">{pro.name}</div>
@@ -2898,9 +2886,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                         {pro.description ? <div className="user-details">{pro.description}</div> : null}
                                     </div>
                                     <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                                        {!pro.isApproved && (
-                                            <button className="user-action-btn approve" onClick={() => handleApprove(pro.id)}>?</button>
-                                        )}
+                                        {!pro.isApproved && <button className="user-action-btn approve" onClick={() => handleApprove(pro.id)}>✓</button>}
                                         <button className="user-action-btn reject" onClick={() => handleDelete(pro.id)}>??</button>
                                     </div>
                                 </div>
@@ -2919,10 +2905,10 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [isLoading, setIsLoading] = useState(true);
 
             const categoryIcons = {
-                sell: '???',
-                buy: '??',
-                give: '??',
-                seek: '??'
+                sell: '🛒',
+                buy: '🔎',
+                give: '🎁',
+                seek: '📣'
             };
 
             const loadItems = async () => {
@@ -2957,7 +2943,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             }, []);
 
             const handleDelete = async (id) => {
-                if (!confirm(lang === 'he' ? '????? ??????' : 'Delete listing?')) return;
+                if (!confirm(lang === 'he' ? '\u05dc\u05de\u05d7\u05d5\u05e7 \u05de\u05d5\u05d3\u05e2\u05d4?' : 'Delete listing?')) return;
                 const { error } = await window.AppAuth.deleteMarketplaceItem(id);
                 if (error) {
                     alert(error.message || 'Failed to delete listing');
@@ -2976,9 +2962,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             };
 
             const source = filter === 'active' ? items.filter((i) => i.isActive) : items;
-            const filteredItems = filter === 'all' || filter === 'active'
-                ? source
-                : source.filter((i) => i.category === filter);
+            const filteredItems = filter === 'all' || filter === 'active' ? source : source.filter((i) => i.category === filter);
 
             return (
                 <div>
@@ -2993,11 +2977,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                 {t.marketplace.active} ({items.filter((i) => i.isActive).length})
                             </button>
                             {Object.keys(categoryIcons).map((cat) => (
-                                <button
-                                    key={cat}
-                                    className={`filter-pill ${filter === cat ? 'active' : ''}`}
-                                    onClick={() => setFilter(cat)}
-                                >
+                                <button key={cat} className={`filter-pill ${filter === cat ? 'active' : ''}`} onClick={() => setFilter(cat)}>
                                     {categoryIcons[cat]} {t.marketplace[cat]}
                                 </button>
                             ))}
@@ -3011,18 +2991,18 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             filteredItems.map((item) => (
                                 <div key={item.id} className="user-card">
                                     <div className="user-avatar" style={{ background: 'var(--color-sand)' }}>
-                                        {categoryIcons[item.category] || '??'}
+                                        {categoryIcons[item.category] || '📌'}
                                     </div>
                                     <div className="user-info">
                                         <div className="user-name">{item.title}</div>
                                         <div className="user-details">
-                                            {(item.price !== null && item.price !== undefined) ? `?${item.price} ? ` : ''}
+                                            {(item.price !== null && item.price !== undefined) ? `₪${item.price} • ` : ''}
                                             {t.marketplace.by} {item.userName} ({item.apartment})
                                         </div>
-                                        {!item.isActive ? <div className="user-details">{lang === 'he' ? '?? ????' : 'Inactive'}</div> : null}
+                                        {!item.isActive ? <div className="user-details">{lang === 'he' ? '\u05dc\u05d0 \u05e4\u05e2\u05d9\u05dc' : 'Inactive'}</div> : null}
                                     </div>
                                     <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                                        {item.isActive ? <button className="user-action-btn approve" onClick={() => handleClose(item.id)}>?</button> : null}
+                                        {item.isActive ? <button className="user-action-btn approve" style={{ width: 'auto', padding: '0 10px' }} onClick={() => handleClose(item.id)}>{lang === 'he' ? '\u05e1\u05d2\u05d5\u05e8' : 'Close'}</button> : null}
                                         <button className="user-action-btn reject" onClick={() => handleDelete(item.id)}>??</button>
                                     </div>
                                 </div>

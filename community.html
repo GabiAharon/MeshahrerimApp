@@ -445,7 +445,7 @@
         /* ==================== MARKETPLACE SECTION ==================== */
         .market-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
             gap: var(--space-md);
         }
 
@@ -479,6 +479,8 @@
 
         .market-content {
             padding: var(--space-md);
+            display: grid;
+            gap: 8px;
         }
 
         .market-type {
@@ -526,7 +528,15 @@
             gap: var(--space-xs);
             font-size: 0.75rem;
             color: var(--color-text-light);
-            margin-top: var(--space-sm);
+            margin-top: var(--space-xs);
+            border-top: 1px dashed var(--color-sand-dark);
+            padding-top: 8px;
+        }
+
+        @media (max-width: 420px) {
+            .market-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Add Button */
@@ -916,6 +926,7 @@
                     setIsLoading(false);
                     return;
                 }
+
                 setPolls(data || []);
                 setIsLoading(false);
             };
@@ -963,7 +974,7 @@
                         return (
                             <div key={poll.id} className="poll-card">
                                 <span className={`poll-status ${poll.is_active ? 'active' : 'ended'}`}>
-                                    {poll.is_active ? `??? ${t.voting.active}` : `? ${t.voting.ended}`}
+                                    {poll.is_active ? t.voting.active : t.voting.ended}
                                 </span>
                                 <h3 className="poll-question">{poll.question}</h3>
                                 <div className="poll-options">
@@ -979,25 +990,18 @@
                                                 onClick={() => handleVote(poll, option.id)}
                                             >
                                                 {hasVoted && (
-                                                    <div
-                                                        className="poll-option-progress"
-                                                        style={{ width: `${percentage}%` }}
-                                                    />
+                                                    <div className="poll-option-progress" style={{ width: `${percentage}%` }} />
                                                 )}
                                                 <div className="poll-option-content">
-                                                    <span className="poll-option-text">
-                                                        {isSelected ? '? ' : ''}{option.text}
-                                                    </span>
-                                                    {hasVoted && (
-                                                        <span className="poll-option-votes">{percentage}%</span>
-                                                    )}
+                                                    <span className="poll-option-text">{isSelected ? '? ' : ''}{option.text}</span>
+                                                    {hasVoted && <span className="poll-option-votes">{percentage}%</span>}
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
                                 <div className="poll-meta">
-                                    <span className="poll-deadline">? {t.voting.deadline} {formatDeadline(poll.ends_at)}</span>
+                                    <span className="poll-deadline">{t.voting.deadline}: {formatDeadline(poll.ends_at)}</span>
                                     <span className="poll-total">{total} {t.voting.votes}</span>
                                 </div>
                             </div>
@@ -1008,7 +1012,7 @@
         };
 
         const ProsSection = ({ reloadToken }) => {
-            const { t } = useLanguage();
+            const { t, lang } = useLanguage();
             const [filter, setFilter] = useState('all');
             const [pros, setPros] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
@@ -1017,11 +1021,11 @@
 
             const detectCategory = (value) => {
                 const normalized = String(value || '').toLowerCase();
-                if (normalized.includes('plumb') || normalized.includes('אינסטל')) return 'plumber';
-                if (normalized.includes('elect') || normalized.includes('חשמל')) return 'electrician';
-                if (normalized.includes('clean') || normalized.includes('ניקיון')) return 'cleaner';
-                if (normalized.includes('handy') || normalized.includes('תחזוקה') || normalized.includes('שיפוץ')) return 'handyman';
-                if (normalized.includes('baby') || normalized.includes('בייבי')) return 'babysitter';
+                if (normalized.includes('plumb') || normalized.includes('\u05d0\u05d9\u05e0\u05e1\u05d8\u05dc')) return 'plumber';
+                if (normalized.includes('elect') || normalized.includes('\u05d7\u05e9\u05de\u05dc')) return 'electrician';
+                if (normalized.includes('clean') || normalized.includes('\u05e0\u05d9\u05e7\u05d9\u05d5\u05df')) return 'cleaner';
+                if (normalized.includes('handy') || normalized.includes('\u05ea\u05d7\u05d6\u05d5\u05e7\u05d4') || normalized.includes('\u05e9\u05d9\u05e4\u05d5\u05e5')) return 'handyman';
+                if (normalized.includes('baby') || normalized.includes('\u05d1\u05d9\u05d9\u05d1\u05d9')) return 'babysitter';
                 return 'all';
             };
 
@@ -1062,23 +1066,14 @@
 
             const filteredPros = filter === 'all' ? pros : pros.filter((item) => item.category === filter);
 
-            if (isLoading) {
-                return <div className="no-admins-message">Loading...</div>;
-            }
-
-            if (filteredPros.length === 0) {
-                return <div className="no-admins-message">{t.pros.empty}</div>;
-            }
+            if (isLoading) return <div className="no-admins-message">Loading...</div>;
+            if (filteredPros.length === 0) return <div className="no-admins-message">{t.pros.empty}</div>;
 
             return (
                 <div>
                     <div className="category-filter">
                         {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                className={`filter-chip ${filter === cat ? 'active' : ''}`}
-                                onClick={() => setFilter(cat)}
-                            >
+                            <button key={cat} className={`filter-chip ${filter === cat ? 'active' : ''}`} onClick={() => setFilter(cat)}>
                                 {t.pros[cat]}
                             </button>
                         ))}
@@ -1086,19 +1081,19 @@
 
                     {filteredPros.map((pro) => (
                         <div key={pro.id} className="pro-card">
-                            <div className="pro-avatar">?</div>
+                            <div className="pro-avatar">PM</div>
                             <div className="pro-info">
                                 <div className="pro-header">
                                     <span className="pro-name">{pro.name}</span>
-                                    {!pro.approved ? <span className="pro-rating">Pending</span> : null}
+                                    {!pro.approved ? <span className="pro-rating">{lang === 'he' ? '\u05de\u05de\u05ea\u05d9\u05df \u05dc\u05d0\u05d9\u05e9\u05d5\u05e8' : 'Pending approval'}</span> : null}
                                 </div>
                                 <div className="pro-category">{pro.professionText}</div>
                                 {pro.description ? <div className="pro-recommendation">{pro.description}</div> : null}
                                 <div className="pro-contact">
                                     {pro.phone ? (
                                         <>
-                                            <a className="pro-contact-btn phone" href={`tel:${pro.phone}`}>📞 {t.pros.call}</a>
-                                            <a className="pro-contact-btn whatsapp" href={`https://wa.me/${pro.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">💬 {t.pros.whatsapp}</a>
+                                            <a className="pro-contact-btn phone" href={`tel:${pro.phone}`}>{t.pros.call}</a>
+                                            <a className="pro-contact-btn whatsapp" href={`https://wa.me/${pro.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer">{t.pros.whatsapp}</a>
                                         </>
                                     ) : null}
                                 </div>
@@ -1116,10 +1111,10 @@
 
             const typeLabel = (category) => {
                 const labels = {
-                    sell: t.market.sale || '??????',
-                    buy: t.market.buy || '???? ?????',
-                    give: t.market.free || '??????',
-                    seek: t.market.seek || '????'
+                    sell: t.market.sale || '\u05dc\u05de\u05db\u05d9\u05e8\u05d4',
+                    buy: t.market.buy || '\u05de\u05d7\u05e4\u05e9 \u05dc\u05e7\u05e0\u05d5\u05ea',
+                    give: t.market.free || '\u05dc\u05de\u05e1\u05d9\u05e8\u05d4',
+                    seek: t.market.seek || '\u05de\u05d7\u05e4\u05e9'
                 };
                 return labels[category] || category;
             };
@@ -1147,13 +1142,8 @@
                 loadItems();
             }, [reloadToken]);
 
-            if (isLoading) {
-                return <div className="no-admins-message">Loading...</div>;
-            }
-
-            if (!items.length) {
-                return <div className="no-admins-message">{t.market.empty}</div>;
-            }
+            if (isLoading) return <div className="no-admins-message">Loading...</div>;
+            if (!items.length) return <div className="no-admins-message">{t.market.empty}</div>;
 
             return (
                 <div className="market-grid">
@@ -1164,15 +1154,11 @@
                             <div key={item.id} className="market-card">
                                 {imageUrl ? <img src={imageUrl} alt="" className="market-image" /> : null}
                                 <div className="market-content">
-                                    <span className={`market-type ${item.category || 'give'}`}>
-                                        {typeLabel(item.category)}
-                                    </span>
+                                    <span className={`market-type ${item.category || 'give'}`}>{typeLabel(item.category)}</span>
                                     <h3 className="market-title">{item.title}</h3>
-                                    {item.category === 'sell' && item.price !== null && item.price !== undefined ? (
-                                        <div className="market-price">?{item.price}</div>
-                                    ) : null}
+                                    {item.category === 'sell' && item.price !== null && item.price !== undefined ? <div className="market-price">₪{item.price}</div> : null}
                                     {item.description ? <div className="pro-recommendation">{item.description}</div> : null}
-                                    <div className="market-meta">?? {t.market.apartment} {ownerApt}</div>
+                                    <div className="market-meta">{t.market.apartment} {ownerApt}</div>
                                 </div>
                             </div>
                         );
@@ -1187,13 +1173,11 @@
             const [proPhone, setProPhone] = useState('');
             const [proCategory, setProCategory] = useState('plumber');
             const [proNote, setProNote] = useState('');
-
             const [itemTitle, setItemTitle] = useState('');
             const [itemDesc, setItemDesc] = useState('');
             const [itemType, setItemType] = useState('give');
             const [itemPrice, setItemPrice] = useState('');
             const [itemFiles, setItemFiles] = useState([]);
-
             const [isSubmitting, setIsSubmitting] = useState(false);
 
             useEffect(() => {
@@ -1215,7 +1199,7 @@
 
             const ensureSupabase = () => {
                 if (!window.AppAuth || !window.supabaseClient) {
-                    alert(lang === 'he' ? 'Supabase ?? ?????' : 'Supabase is not configured');
+                    alert(lang === 'he' ? 'Supabase \u05dc\u05d0 \u05de\u05d5\u05d2\u05d3\u05e8' : 'Supabase is not configured');
                     return false;
                 }
                 return true;
@@ -1223,9 +1207,8 @@
 
             const handleProsSubmit = async () => {
                 if (!ensureSupabase()) return;
-
                 if (!proName.trim()) {
-                    alert(lang === 'he' ? '?? ????? ?? ??? ?????' : 'Please enter professional name');
+                    alert(lang === 'he' ? '\u05e0\u05d0 \u05dc\u05d4\u05d6\u05d9\u05df \u05e9\u05dd \u05d1\u05e2\u05dc \u05de\u05e7\u05e6\u05d5\u05e2' : 'Please enter professional name');
                     return;
                 }
 
@@ -1239,20 +1222,19 @@
                 setIsSubmitting(false);
 
                 if (error) {
-                    alert(error.message || (lang === 'he' ? '????? ?????' : 'Failed to save'));
+                    alert(error.message || (lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save'));
                     return;
                 }
 
-                alert(lang === 'he' ? '???? ??????. ??? ?????? ????? ???? ????? ????.' : 'Saved successfully. It will appear after admin approval.');
+                alert(lang === 'he' ? '\u05e0\u05e9\u05de\u05e8 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4. \u05d9\u05d5\u05e6\u05d2 \u05dc\u05d0\u05d7\u05e8 \u05d0\u05d9\u05e9\u05d5\u05e8 \u05de\u05e0\u05d4\u05dc.' : 'Saved successfully. It will appear after admin approval.');
                 if (typeof onSaved === 'function') onSaved('pros');
                 onClose();
             };
 
             const handleMarketSubmit = async () => {
                 if (!ensureSupabase()) return;
-
                 if (!itemTitle.trim()) {
-                    alert(lang === 'he' ? '?? ????? ????? ??????' : 'Please enter a title');
+                    alert(lang === 'he' ? '\u05e0\u05d0 \u05dc\u05d4\u05d6\u05d9\u05df \u05db\u05d5\u05ea\u05e8\u05ea' : 'Please enter a title');
                     return;
                 }
 
@@ -1267,21 +1249,21 @@
                 setIsSubmitting(false);
 
                 if (error) {
-                    alert(error.message || (lang === 'he' ? '????? ?????' : 'Failed to save'));
+                    alert(error.message || (lang === 'he' ? '\u05d4\u05e9\u05de\u05d9\u05e8\u05d4 \u05e0\u05db\u05e9\u05dc\u05d4' : 'Failed to save'));
                     return;
                 }
 
-                alert(lang === 'he' ? '?????? ?????? ??????' : 'Listing published successfully');
+                alert(lang === 'he' ? '\u05d4\u05de\u05d5\u05d3\u05e2\u05d4 \u05e4\u05d5\u05e8\u05e1\u05de\u05d4 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4' : 'Listing published successfully');
                 if (typeof onSaved === 'function') onSaved('market');
                 onClose();
             };
 
             return (
                 <div className={`modal-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">{title}</h2>
-                            <button className="modal-close" onClick={onClose}>?</button>
+                            <button className="modal-close" onClick={onClose}>×</button>
                         </div>
                         <div className="modal-body">
                             {type === 'pros' ? (
@@ -1325,10 +1307,10 @@
                                     <div className="form-group">
                                         <label className="form-label">{t.market.itemType}</label>
                                         <select className="form-select" value={itemType} onChange={(e) => setItemType(e.target.value)}>
-                                            <option value="give">{t.market.free || '??????'}</option>
-                                            <option value="sell">{t.market.sale || '??????'}</option>
-                                            <option value="seek">{t.market.seek || '????'}</option>
-                                            <option value="buy">{t.market.buy || '???? ?????'}</option>
+                                            <option value="give">{t.market.free || '\u05dc\u05de\u05e1\u05d9\u05e8\u05d4'}</option>
+                                            <option value="sell">{t.market.sale || '\u05dc\u05de\u05db\u05d9\u05e8\u05d4'}</option>
+                                            <option value="seek">{t.market.seek || '\u05de\u05d7\u05e4\u05e9'}</option>
+                                            <option value="buy">{t.market.buy || '\u05de\u05d7\u05e4\u05e9 \u05dc\u05e7\u05e0\u05d5\u05ea'}</option>
                                         </select>
                                     </div>
                                     {itemType === 'sell' ? (
@@ -1338,14 +1320,8 @@
                                         </div>
                                     ) : null}
                                     <div className="form-group">
-                                        <label className="form-label">??????</label>
-                                        <input
-                                            type="file"
-                                            className="form-input"
-                                            multiple
-                                            accept="image/*"
-                                            onChange={(e) => setItemFiles(Array.from(e.target.files || []))}
-                                        />
+                                        <label className="form-label">\u05ea\u05de\u05d5\u05e0\u05d5\u05ea</label>
+                                        <input type="file" className="form-input" multiple accept="image/*" onChange={(e) => setItemFiles(Array.from(e.target.files || []))} />
                                     </div>
                                     <button className="btn-submit" onClick={handleMarketSubmit} disabled={isSubmitting}>
                                         {isSubmitting ? '...' : t.market.submit}
@@ -1361,8 +1337,8 @@
         const BottomNav = () => {
             const { t } = useLanguage();
             const navItems = [
-                { id: 'home', icon: '🏠', label: t.nav.home, href: 'index.html' },
-                { id: 'faults', icon: '🔧', label: t.nav.faults, href: 'faults.html' },
+                { id: 'home', icon: '⌂', label: t.nav.home, href: 'index.html' },
+                { id: 'faults', icon: '🛠', label: t.nav.faults, href: 'faults.html' },
                 { id: 'notices', icon: '🔔', label: t.nav.notices, href: 'notices.html', badge: true },
                 { id: 'community', icon: '👥', label: t.nav.community, href: 'community.html', active: true },
                 { id: 'profile', icon: '👤', label: t.nav.profile, href: 'profile.html' }
@@ -1370,12 +1346,8 @@
 
             return (
                 <nav className="bottom-nav">
-                    {navItems.map(item => (
-                        <a
-                            key={item.id}
-                            href={item.href}
-                            className={`nav-item ${item.active ? 'active' : ''}`}
-                        >
+                    {navItems.map((item) => (
+                        <a key={item.id} href={item.href} className={`nav-item ${item.active ? 'active' : ''}`}>
                             <span className="nav-icon">{item.icon}</span>
                             <span className="nav-label">{item.label}</span>
                             {item.badge && !item.active && <span className="nav-badge" />}
