@@ -729,14 +729,18 @@
             padding-bottom: calc(var(--safe-bottom) + var(--space-sm));
             display: flex;
             justify-content: space-around;
+            align-items: stretch;
             z-index: 100;
             box-shadow: 0 -4px 20px rgba(61, 46, 42, 0.06);
+            min-height: 74px;
         }
 
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            flex: 1;
             gap: var(--space-xs);
             padding: var(--space-sm) var(--space-md);
             border-radius: var(--radius-md);
@@ -779,6 +783,7 @@
             font-weight: 500;
             color: var(--color-text-light);
             transition: color 0.3s ease;
+            line-height: 1.1;
         }
 
         .nav-item.active .nav-label {

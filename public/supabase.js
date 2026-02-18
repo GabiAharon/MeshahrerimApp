@@ -95,19 +95,6 @@
             return { data, error };
         },
 
-        async signInWithGoogle() {
-            const { client, error: clientError } = withClient();
-            if (clientError) return { error: clientError };
-
-            const { data, error } = await client.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin + '/auth.html?callback=true'
-                }
-            });
-            return { data, error };
-        },
-
         async signOut() {
             const { client, error } = withClient();
             if (error) return;
@@ -195,7 +182,7 @@
             return { data: data || [], error };
         },
 
-        async setPaymentStatus({ userId, apartment, year, isPaid }) {
+        async setPaymentStatus({ userId, apartment, year, isPaid, amount = 0 }) {
             const { client, error: clientError } = withClient();
             if (clientError) return { error: clientError };
 
@@ -208,7 +195,7 @@
                         user_id: userId,
                         apartment: apartment || '',
                         year,
-                        amount: 0,
+                        amount: Number(amount) || 0,
                         is_paid: !!isPaid,
                         paid_at: paidAt
                     },
@@ -216,6 +203,44 @@
                         onConflict: 'user_id,year'
                     }
                 )
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
+        async getExpenses({ limit = 200 } = {}) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: [], error: clientError };
+
+            const { data, error } = await client
+                .from('expenses')
+                .select('*')
+                .order('expense_date', { ascending: false })
+                .order('created_at', { ascending: false })
+                .limit(limit);
+
+            return { data: data || [], error };
+        },
+
+        async createExpense({ category, amount, description }) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { error: clientError };
+
+            const user = await this.getCurrentUser();
+            if (!user) return { error: { message: 'Not authenticated' } };
+
+            const payload = {
+                category,
+                amount: Number(amount) || 0,
+                description: description || null,
+                created_by: user.id,
+                expense_date: new Date().toISOString().slice(0, 10)
+            };
+
+            const { data, error } = await client
+                .from('expenses')
+                .insert(payload)
                 .select()
                 .single();
 

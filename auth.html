@@ -1259,17 +1259,6 @@
                 }
             };
 
-            const handleGoogleLogin = async () => {
-                if (!window.AppAuth) {
-                    setAuthError('Authentication is not configured.');
-                    return;
-                }
-                const { error } = await window.AppAuth.signInWithGoogle();
-                if (error) {
-                    setAuthError(error.message || 'Google login failed');
-                }
-            };
-
             return (
                 <div className="auth-screen slide-in">
                     <button className="language-toggle-float" onClick={toggleLanguage}>
@@ -1336,17 +1325,6 @@
                                 {authError}
                             </div>
                         )}
-
-                        <div className="divider">
-                            <span className="divider-line"></span>
-                            <span className="divider-text">{t.login.or}</span>
-                            <span className="divider-line"></span>
-                        </div>
-
-                        <button className="social-btn" onClick={handleGoogleLogin}>
-                            <Icons.Google />
-                            {t.login.google}
-                        </button>
 
                         <p style={{ textAlign: 'center', marginTop: 'var(--space-xl)', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
                             {t.login.noAccount}{' '}

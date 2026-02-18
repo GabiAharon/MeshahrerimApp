@@ -808,13 +808,17 @@
             padding-bottom: calc(var(--safe-bottom) + var(--space-sm));
             display: flex;
             justify-content: space-around;
+            align-items: stretch;
             z-index: 50;
+            min-height: 74px;
         }
 
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            flex: 1;
             gap: var(--space-xs);
             padding: var(--space-sm) var(--space-md);
             text-decoration: none;
@@ -1425,24 +1429,74 @@
 
         // Components
         const FinanceSection = () => {
-            const { t } = useLanguage();
-            const chartData = [
-                { month: t.finance.months[0], income: 85, expense: 60 },
-                { month: t.finance.months[1], income: 100, expense: 70 },
-                { month: t.finance.months[2], income: 90, expense: 55 },
-                { month: t.finance.months[3], income: 95, expense: 65 }
-            ];
+            const { t, lang } = useLanguage();
+            const [year, setYear] = useState(new Date().getFullYear());
+            const [annualFee, setAnnualFee] = useState(Number(localStorage.getItem('mb_annual_fee') || 0));
+            const [summary, setSummary] = useState({ income: 0, expenses: 0, balance: 0, paid: 0, debtors: 0 });
+
+            const loadSummary = async () => {
+                if (!window.AppAuth || !window.supabaseClient) return;
+
+                const [{ data: users }, { data: payments }, { data: expenses }] = await Promise.all([
+                    window.AppAuth.getAllUsers(),
+                    window.AppAuth.getPaymentsForYear(year),
+                    window.AppAuth.getExpenses()
+                ]);
+
+                const approvedUsers = (users || []).filter((u) => !u.is_admin && u.is_approved);
+                const paidUsers = new Set((payments || []).filter((p) => p.is_paid).map((p) => p.user_id));
+                const paidCount = approvedUsers.filter((u) => paidUsers.has(u.id)).length;
+                const debtorsCount = Math.max(approvedUsers.length - paidCount, 0);
+
+                const income = paidCount * (Number(annualFee) || 0);
+                const expenseTotal = (expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+                const balance = income - expenseTotal;
+
+                setSummary({ income, expenses: expenseTotal, balance, paid: paidCount, debtors: debtorsCount });
+            };
+
+            useEffect(() => {
+                loadSummary();
+            }, [year, annualFee]);
+
+            const saveAnnualFee = () => {
+                localStorage.setItem('mb_annual_fee', String(Number(annualFee) || 0));
+                loadSummary();
+            };
 
             return (
                 <div className="finance-card">
                     <div className="finance-header">
                         <h3 className="finance-title">{t.finance.title}</h3>
-                        <span className="finance-period">{t.finance.period}</span>
+                        <span className="finance-period">{year}</span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '14px' }}>
+                        <input
+                            type="number"
+                            min="2020"
+                            max="2100"
+                            value={year}
+                            onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())}
+                            className="form-input"
+                            placeholder={lang === 'he' ? 'שנה' : 'Year'}
+                        />
+                        <input
+                            type="number"
+                            min="0"
+                            value={annualFee}
+                            onChange={(e) => setAnnualFee(Number(e.target.value) || 0)}
+                            className="form-input"
+                            placeholder={lang === 'he' ? 'תשלום שנתי לדירה' : 'Annual fee per apartment'}
+                        />
+                        <button className="btn-submit" type="button" onClick={saveAnnualFee}>
+                            {lang === 'he' ? 'שמור' : 'Save'}
+                        </button>
                     </div>
 
                     <div className="balance-display">
                         <div className="balance-label">{t.finance.balance}</div>
-                        <div className="balance-amount">₪0</div>
+                        <div className="balance-amount">₪{summary.balance.toLocaleString()}</div>
                     </div>
 
                     <div className="finance-row">
@@ -1450,7 +1504,7 @@
                             <div className="finance-row-icon income">📈</div>
                             <span>{t.finance.income}</span>
                         </div>
-                        <span className="finance-row-amount income">+₪0</span>
+                        <span className="finance-row-amount income">+₪{summary.income.toLocaleString()}</span>
                     </div>
 
                     <div className="finance-row">
@@ -1458,38 +1512,22 @@
                             <div className="finance-row-icon expense">📉</div>
                             <span>{t.finance.expenses}</span>
                         </div>
-                        <span className="finance-row-amount expense">-₪0</span>
+                        <span className="finance-row-amount expense">-₪{summary.expenses.toLocaleString()}</span>
                     </div>
 
-                    <div className="chart-container">
-                        <div className="chart-bar-group">
-                            {chartData.map((data, i) => (
-                                <React.Fragment key={i}>
-                                    <div className="chart-bar income" style={{ height: `${data.income}%` }}>
-                                        <span className="chart-bar-label">{data.month}</span>
-                                    </div>
-                                    <div className="chart-bar expense" style={{ height: `${data.expense}%` }} />
-                                </React.Fragment>
-                            ))}
-                        </div>
-                        <div className="chart-legend">
-                            <div className="legend-item">
-                                <div className="legend-dot income"></div>
-                                <span>{t.finance.legend.income}</span>
-                            </div>
-                            <div className="legend-item">
-                                <div className="legend-dot expense"></div>
-                                <span>{t.finance.legend.expenses}</span>
-                            </div>
-                        </div>
+                    <div style={{ marginTop: '10px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                        {lang === 'he'
+                            ? `שילמו: ${summary.paid} | חייבים: ${summary.debtors}`
+                            : `Paid: ${summary.paid} | Debtors: ${summary.debtors}`}
                     </div>
                 </div>
             );
         };
 
-        const DebtorsSection = () => {
+        const DebtorsSection = ({ onDataChanged }) => {
             const { t, lang } = useLanguage();
             const [year, setYear] = useState(new Date().getFullYear());
+            const [annualFee, setAnnualFee] = useState(Number(localStorage.getItem('mb_annual_fee') || 0));
             const [rows, setRows] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
 
@@ -1505,7 +1543,6 @@
                 ]);
 
                 if (usersError || paymentsError) {
-                    console.error('Failed to load payment control data', usersError || paymentsError);
                     setIsLoading(false);
                     return;
                 }
@@ -1541,21 +1578,23 @@
                     userId: row.id,
                     apartment: row.apartment,
                     year,
-                    isPaid: paid
+                    isPaid: paid,
+                    amount: paid ? annualFee : 0
                 });
 
                 if (error) {
-                    alert(error.message || (lang === 'he' ? ' ' : 'Save failed'));
+                    alert(error.message || (lang === 'he' ? 'שמירה נכשלה' : 'Save failed'));
                     return;
                 }
 
                 await loadRows();
+                if (typeof onDataChanged === 'function') onDataChanged();
             };
 
             if (isLoading) {
                 return (
                     <div className="no-admins-message" style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
-                        {lang === 'he' ? ' ...' : 'Loading...'}
+                        {lang === 'he' ? 'טוען נתונים...' : 'Loading...'}
                     </div>
                 );
             }
@@ -1563,37 +1602,47 @@
             if (rows.length === 0) {
                 return (
                     <div className="no-admins-message" style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}></div>
-                        <div>{lang === 'he' ? '  ' : 'No residents found'}</div>
+                        <div>{lang === 'he' ? 'אין דיירים להצגה' : 'No residents found'}</div>
                     </div>
                 );
             }
 
             return (
                 <div>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
-                        <label htmlFor="payments-year" style={{ fontWeight: 700 }}>{lang === 'he' ? ' ' : 'Billing year'}</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: 'var(--space-md)' }}>
                         <input
-                            id="payments-year"
                             type="number"
                             min="2020"
                             max="2100"
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value) || new Date().getFullYear())}
-                            style={{ width: 120, padding: '10px 12px', borderRadius: '12px', border: '1px solid var(--color-border)' }}
+                            className="form-input"
+                            placeholder={lang === 'he' ? 'שנה' : 'Year'}
+                        />
+                        <input
+                            type="number"
+                            min="0"
+                            value={annualFee}
+                            onChange={(e) => {
+                                const value = Number(e.target.value) || 0;
+                                setAnnualFee(value);
+                                localStorage.setItem('mb_annual_fee', String(value));
+                            }}
+                            className="form-input"
+                            placeholder={lang === 'he' ? 'תשלום שנתי לדירה' : 'Annual fee per apartment'}
                         />
                     </div>
 
-                    {rows.map(row => (
+                    {rows.map((row) => (
                         <div key={row.id} className="debtor-card">
-                            <div className="debtor-avatar"></div>
+                            <div className="debtor-avatar">🏠</div>
                             <div className="debtor-info">
                                 <div className="debtor-name">{row.name}</div>
                                 <div className="debtor-apartment">{t.debtors.apartment} {row.apartment}</div>
                             </div>
                             <div>
                                 <div className="debtor-amount" style={{ color: row.isPaid ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                                    {row.isPaid ? (lang === 'he' ? '' : 'Paid') : (lang === 'he' ? ' ' : 'Unpaid')}
+                                    {row.isPaid ? (lang === 'he' ? 'שולם' : 'Paid') : (lang === 'he' ? 'לא שולם' : 'Unpaid')}
                                 </div>
                                 <button
                                     className={`reminder-btn ${row.isPaid ? 'sent' : ''}`}
@@ -1601,10 +1650,10 @@
                                     disabled={!row.isApproved}
                                 >
                                     {!row.isApproved
-                                        ? (lang === 'he' ? ' ' : 'Pending approval')
+                                        ? (lang === 'he' ? 'ממתין אישור' : 'Pending approval')
                                         : row.isPaid
-                                            ? (lang === 'he' ? '  ' : 'Mark unpaid')
-                                            : (lang === 'he' ? ' ' : 'Mark paid')}
+                                            ? (lang === 'he' ? 'סמן כלא שולם' : 'Mark unpaid')
+                                            : (lang === 'he' ? 'סמן כשולם' : 'Mark paid')}
                                 </button>
                             </div>
                         </div>
@@ -1612,37 +1661,63 @@
                 </div>
             );
         };
-        const ExpensesSection = ({ onAdd }) => {
-            const { t, lang } = useLanguage();
+
+        const ExpensesSection = ({ onAdd, reloadToken }) => {
+            const { t } = useLanguage();
+            const [expenses, setExpenses] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+
+            const loadExpenses = async () => {
+                if (!window.AppAuth || !window.supabaseClient) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const { data, error } = await window.AppAuth.getExpenses();
+                if (error) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                setExpenses(data || []);
+                setIsLoading(false);
+            };
+
+            useEffect(() => {
+                setIsLoading(true);
+                loadExpenses();
+            }, [reloadToken]);
 
             return (
                 <div>
-                    {mockExpenses.length === 0 ? (
+                    {isLoading ? (
                         <div className="no-admins-message" style={{ padding: 'var(--space-xl)', textAlign: 'center', marginBottom: 'var(--space-md)' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>📋</div>
+                            Loading...
+                        </div>
+                    ) : expenses.length === 0 ? (
+                        <div className="no-admins-message" style={{ padding: 'var(--space-xl)', textAlign: 'center', marginBottom: 'var(--space-md)' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🧾</div>
                             <div>{t.expenses.empty}</div>
                         </div>
                     ) : (
-                        mockExpenses.map(expense => (
+                        expenses.map((expense) => (
                             <div key={expense.id} className="expense-card">
                                 <div className="expense-header">
                                     <div className="expense-category">
-                                        <div className="expense-icon">{categoryIcons[expense.category]}</div>
+                                        <div className="expense-icon">{categoryIcons[expense.category] || '📋'}</div>
                                         <div>
-                                            <div className="expense-name">{expense.name[lang]}</div>
-                                            <div className="expense-date">{expense.date}</div>
+                                            <div className="expense-name">{t.expenses.categories?.[expense.category] || expense.category}</div>
+                                            <div className="expense-date">{expense.expense_date || ''}</div>
                                         </div>
                                     </div>
-                                    <div className="expense-amount">₪{expense.amount.toLocaleString()}</div>
+                                    <div className="expense-amount">?{Number(expense.amount || 0).toLocaleString()}</div>
                                 </div>
-                                {expense.hasReceipt && (
-                                    <div className="expense-receipt">📎 {t.expenses.receipt}</div>
-                                )}
+                                {expense.description ? <div className="expense-receipt">{expense.description}</div> : null}
                             </div>
                         ))
                     )}
                     <button className="add-expense-btn" onClick={onAdd}>
-                        ➕ {t.expenses.add}
+                        ? {t.expenses.add}
                     </button>
                 </div>
             );
@@ -2765,72 +2840,94 @@
             );
         };
 
-        const AddExpenseModal = ({ isOpen, onClose }) => {
-            const { t } = useLanguage();
+        const AddExpenseModal = ({ isOpen, onClose, onSaved }) => {
+            const { t, lang } = useLanguage();
+            const [category, setCategory] = useState('other');
+            const [amount, setAmount] = useState('');
+            const [description, setDescription] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+
+            const handleSubmit = async () => {
+                if (!window.AppAuth) return;
+                if (!amount || Number(amount) <= 0) {
+                    alert(lang === 'he' ? 'נא להזין סכום תקין' : 'Please enter a valid amount');
+                    return;
+                }
+
+                setIsSubmitting(true);
+                const { error } = await window.AppAuth.createExpense({
+                    category,
+                    amount: Number(amount),
+                    description
+                });
+                setIsSubmitting(false);
+
+                if (error) {
+                    alert(error.message || (lang === 'he' ? 'שמירת הוצאה נכשלה' : 'Failed to save expense'));
+                    return;
+                }
+
+                setCategory('other');
+                setAmount('');
+                setDescription('');
+                if (typeof onSaved === 'function') onSaved();
+                onClose();
+            };
 
             return (
                 <div className={`modal-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">{t.expenses.form.title}</h2>
-                            <button className="modal-close" onClick={onClose}>✕</button>
+                            <button className="modal-close" onClick={onClose}>X</button>
                         </div>
                         <div className="modal-body">
                             <div className="form-group">
                                 <label className="form-label">{t.expenses.form.category}</label>
-                                <select className="form-select">
+                                <select className="form-select" value={category} onChange={(e) => setCategory(e.target.value)}>
                                     {Object.entries(t.expenses.categories).map(([key, label]) => (
-                                        <option key={key} value={key}>{categoryIcons[key]} {label}</option>
+                                        <option key={key} value={key}>{label}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">{t.expenses.form.amount}</label>
-                                <input type="number" className="form-input" placeholder="₪" dir="ltr" />
+                                <input type="number" className="form-input" placeholder="₪" dir="ltr" value={amount} onChange={(e) => setAmount(e.target.value)} />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">{t.expenses.form.description}</label>
-                                <input type="text" className="form-input" />
+                                <input type="text" className="form-input" value={description} onChange={(e) => setDescription(e.target.value)} />
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">{t.expenses.form.receipt}</label>
-                                <div className="file-upload">
-                                    <div className="file-upload-icon">📷</div>
-                                    <div className="file-upload-text">{t.expenses.form.uploadReceipt}</div>
-                                </div>
-                            </div>
-                            <button className="btn-submit">{t.expenses.form.submit}</button>
+                            <button className="btn-submit" type="button" onClick={handleSubmit} disabled={isSubmitting}>
+                                {isSubmitting ? '...' : t.expenses.form.submit}
+                            </button>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        const BottomNav = ({ onNavigate }) => {
+        const BottomNav = ({ onNavigate, activeTab }) => {
             const { t } = useLanguage();
             const navItems = [
-                { id: 'dashboard', icon: '📊', label: t.nav.dashboard, action: () => onNavigate('finance') },
-                { id: 'residents', icon: '', label: t.nav.residents, action: () => onNavigate('users') },
+                { id: 'finance', icon: '📊', label: t.nav.dashboard, action: () => onNavigate('finance') },
+                { id: 'users', icon: '👥', label: t.nav.residents, action: () => onNavigate('users') },
                 { id: 'faults', icon: '🔧', label: t.nav.faults || 'תקלות', action: () => onNavigate('faults') },
                 { id: 'exit', icon: '🚪', label: t.nav.exit, href: 'index.html' }
             ];
 
             return (
                 <nav className="bottom-nav">
-                    {navItems.map(item => (
+                    {navItems.map((item) =>
                         item.href ? (
-                            <a
-                                key={item.id}
-                                href={item.href}
-                                className="nav-item"
-                            >
+                            <a key={item.id} href={item.href} className="nav-item">
                                 <span className="nav-icon">{item.icon}</span>
                                 <span className="nav-label">{item.label}</span>
                             </a>
                         ) : (
                             <button
                                 key={item.id}
-                                className="nav-item"
+                                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
                                 onClick={item.action}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                             >
@@ -2838,7 +2935,7 @@
                                 <span className="nav-label">{item.label}</span>
                             </button>
                         )
-                    ))}
+                    )}
                 </nav>
             );
         };
@@ -2847,6 +2944,7 @@
             const { t, lang } = useLanguage();
             const [activeTab, setActiveTab] = useState('finance');
             const [showExpenseModal, setShowExpenseModal] = useState(false);
+            const [dataVersion, setDataVersion] = useState(0);
             const [accessState, setAccessState] = useState('checking');
             const [pendingUsersCount, setPendingUsersCount] = useState(0);
             const previousPendingUsersCountRef = useRef(null);
@@ -2946,15 +3044,6 @@
                 { id: 'admins', icon: '👑', label: t.tabs.admins }
             ];
 
-            const quickActions = [
-                { id: 'notices', icon: '📢', label: lang === 'he' ? 'הודעות + פושי' : 'Notices + Push' },
-                { id: 'polls', icon: '📊', label: lang === 'he' ? 'סקרים' : 'Polls' },
-                { id: 'professionals', icon: '👷', label: lang === 'he' ? 'בעלי מקצוע' : 'Professionals' },
-                { id: 'marketplace', icon: '🛒', label: lang === 'he' ? 'לוח מודעות' : 'Marketplace' },
-                { id: 'faults', icon: '🔧', label: lang === 'he' ? 'תקלות' : 'Faults' },
-                { id: 'users', icon: '👥', label: lang === 'he' ? `אישור דיירים (${pendingUsersCount})` : `Resident Approval (${pendingUsersCount})` }
-            ];
-
             return (
                 <div className="app-container">
                     <header className="page-header">
@@ -3009,42 +3098,10 @@
                         ))}
                     </div>
 
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: '10px',
-                        padding: '0 var(--space-lg) var(--space-md)'
-                    }}>
-                        {quickActions.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveTab(item.id)}
-                                style={{
-                                    border: '1px solid var(--color-sand-dark)',
-                                    borderRadius: '14px',
-                                    background: activeTab === item.id ? 'var(--color-primary)' : 'white',
-                                    color: activeTab === item.id ? 'white' : 'var(--color-text)',
-                                    padding: '10px 12px',
-                                    fontFamily: 'var(--font-body)',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <span>{item.icon}</span>
-                                <span>{item.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
                     <main className="main-content">
                         {activeTab === 'finance' && <FinanceSection />}
-                        {activeTab === 'debtors' && <DebtorsSection />}
-                        {activeTab === 'expenses' && <ExpensesSection onAdd={() => setShowExpenseModal(true)} />}
+                        {activeTab === 'debtors' && <DebtorsSection onDataChanged={() => setDataVersion((v) => v + 1)} />}
+                        {activeTab === 'expenses' && <ExpensesSection reloadToken={dataVersion} onAdd={() => setShowExpenseModal(true)} />}
                         {activeTab === 'users' && <UsersSection />}
                         {activeTab === 'faults' && <FaultsSection />}
                         {activeTab === 'notices' && <NoticesSection />}
@@ -3054,11 +3111,15 @@
                         {activeTab === 'admins' && <AdminsSection />}
                     </main>
 
-                    <BottomNav onNavigate={setActiveTab} />
+                    <BottomNav onNavigate={setActiveTab} activeTab={activeTab} />
 
                     <AddExpenseModal
                         isOpen={showExpenseModal}
                         onClose={() => setShowExpenseModal(false)}
+                        onSaved={() => {
+                            setShowExpenseModal(false);
+                            setDataVersion((v) => v + 1);
+                        }}
                     />
                 </div>
             );
