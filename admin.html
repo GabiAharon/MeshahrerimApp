@@ -2266,21 +2266,6 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             const [customContent, setCustomContent] = useState('');
             const [customType, setCustomType] = useState('info');
             const [isLoading, setIsLoading] = useState(true);
-            const [pushStatus, setPushStatus] = useState(null);
-            const [checkingPush, setCheckingPush] = useState(false);
-
-            const checkPushStatus = async () => {
-                setCheckingPush(true);
-                setPushStatus(null);
-                try {
-                    const res = await fetch('/api/push-status');
-                    const data = await res.json();
-                    setPushStatus({ ok: res.ok, ...data });
-                } catch (err) {
-                    setPushStatus({ ok: false, error: err.message });
-                }
-                setCheckingPush(false);
-            };
 
             const typeMeta = {
                 urgent: { icon: '\u26A0\uFE0F', label: lang === 'he' ? '\u05d3\u05d7\u05d5\u05e3' : 'Urgent' },
@@ -2518,43 +2503,6 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                         </button>
                                     </div>
                                 ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="admin-management-card">
-                        <div className="admin-section-title" style={{marginBottom:'8px'}}>
-                            {lang === 'he' ? '\u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05e6\u05d1 OneSignal' : 'OneSignal Status Check'}
-                        </div>
-                        <button
-                            onClick={checkPushStatus}
-                            disabled={checkingPush}
-                            style={{
-                                background: 'var(--color-secondary)', color: 'white', border: 'none',
-                                borderRadius: 'var(--radius-md)', padding: '10px 18px',
-                                fontFamily: 'var(--font-body)', fontWeight: 700, cursor: 'pointer',
-                                marginBottom: pushStatus ? '12px' : 0, fontSize: '0.875rem'
-                            }}
-                        >
-                            {checkingPush ? '...' : (lang === 'he' ? '\u05d1\u05d3\u05d5\u05e7' : 'Check')}
-                        </button>
-                        {pushStatus && (
-                            <div style={{
-                                background: pushStatus.ok ? '#e8f5f0' : '#fcf0f0',
-                                border: `1px solid ${pushStatus.ok ? '#4a9d7c' : '#c75d5d'}`,
-                                borderRadius: 'var(--radius-sm)', padding: '12px',
-                                fontSize: '0.8125rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap', direction: 'ltr'
-                            }}>
-                                {pushStatus.error
-                                    ? `ERROR: ${JSON.stringify(pushStatus.error)}`
-                                    : [
-                                        `App: ${pushStatus.name || 'unknown'}`,
-                                        `Total subscribers: ${pushStatus.players ?? '?'}`,
-                                        `Messageable: ${pushStatus.messageable_players ?? '?'}`,
-                                        `GCM (Android) key: ${pushStatus.gcm_key_present ? 'YES' : 'NO'}`,
-                                        `APNS env: ${pushStatus.apns_env || 'none'}`
-                                    ].join('\n')
-                                }
                             </div>
                         )}
                     </div>
