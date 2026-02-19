@@ -1,7 +1,7 @@
-// PWA + OneSignal Service Worker
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+// PWA Service Worker
+// OneSignal SDK loaded separately via push.js
 
-const CACHE_NAME = 'mybuilding-cache-v13';
+const CACHE_NAME = 'mybuilding-cache-v14';
 const APP_SHELL = [
   '/',
   '/index.html',

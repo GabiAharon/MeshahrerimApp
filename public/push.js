@@ -20,9 +20,7 @@
     window.OneSignalDeferred.push(async function(OneSignal) {
         await OneSignal.init({
             appId: ONE_SIGNAL_APP_ID,
-            allowLocalhostAsSecureOrigin: true,
-            serviceWorkerParam: { scope: '/' },
-            serviceWorkerPath: '/sw.js'
+            allowLocalhostAsSecureOrigin: true
         });
 
         // Auto-prompt for permission if not already granted
