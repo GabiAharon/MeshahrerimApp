@@ -102,7 +102,7 @@
                     await OneSignal.init({
                         appId: ONE_SIGNAL_APP_ID,
                         allowLocalhostAsSecureOrigin: true,
-                        serviceWorkerPath: '/OneSignalSDKWorker.js',
+                        serviceWorkerPath: '/sw.js',
                         serviceWorkerParam: { scope: '/' }
                     });
                     if (externalUserId) {

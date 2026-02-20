@@ -1,7 +1,11 @@
-// PWA Service Worker - handles caching only.
-// OneSignal uses its own dedicated worker: /OneSignalSDKWorker.js
+// PWA + OneSignal Combined Service Worker
+try {
+  importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+} catch (e) {
+  console.warn('OneSignal SW failed to load:', e);
+}
 
-const CACHE_NAME = 'mybuilding-cache-v12';
+const CACHE_NAME = 'mybuilding-cache-v15';
 const APP_SHELL = [
   '/',
   '/index.html',
