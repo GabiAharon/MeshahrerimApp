@@ -3,11 +3,23 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const appId = process.env.ONESIGNAL_APP_ID || process.env.VITE_ONESIGNAL_APP_ID;
-  const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+  const appId = (process.env.ONESIGNAL_APP_ID || process.env.VITE_ONESIGNAL_APP_ID || '').trim();
+  const rawApiKey = (
+    process.env.ONESIGNAL_APP_API_KEY ||
+    process.env.ONESIGNAL_REST_API_KEY ||
+    process.env.ONESIGNAL_API_KEY ||
+    ''
+  ).trim();
+  const apiKey = rawApiKey
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/^basic\s+/i, '')
+    .replace(/^key\s+/i, '');
 
   if (!appId || !apiKey) {
-    return res.status(500).json({ error: 'OneSignal server credentials are missing' });
+    return res.status(500).json({
+      error: 'OneSignal server credentials are missing',
+      hint: 'Set ONESIGNAL_APP_ID and ONESIGNAL_APP_API_KEY in Vercel (no Key/Basic prefix).'
+    });
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
@@ -47,7 +59,10 @@ export default async function handler(req, res) {
     const result = await response.json();
     if (!response.ok) {
       return res.status(response.status).json({
-        error: result?.errors || result?.message || 'OneSignal request failed'
+        error: result?.errors || result?.message || 'OneSignal request failed',
+        hint: response.status === 401 || response.status === 403
+          ? 'Check ONESIGNAL_APP_API_KEY in Vercel. Paste raw key only, without prefix.'
+          : undefined
       });
     }
 
