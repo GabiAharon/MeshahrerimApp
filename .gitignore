@@ -13,3 +13,5 @@ config.js
 
 # Note: public/config.js IS committed as a default template
 # The prebuild script overwrites it with real values from env vars
+
+.vercel

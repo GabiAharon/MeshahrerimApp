@@ -4,6 +4,7 @@
   "description": "MyBuilding - Smart Building Management App (PWA)",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/generate-config.js",
     "dev": "vite",
     "prebuild": "node scripts/generate-config.js",
     "build": "npm run prebuild && vite build",

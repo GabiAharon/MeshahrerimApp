@@ -5,7 +5,7 @@ try {
   console.warn('OneSignal SW failed to load:', e);
 }
 
-const CACHE_NAME = 'mybuilding-cache-v16';
+const CACHE_NAME = 'mybuilding-cache-v17';
 const APP_SHELL = [
   '/',
   '/index.html',

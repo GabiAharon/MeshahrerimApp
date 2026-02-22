@@ -2124,11 +2124,38 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
 
             const handleStatusChange = async (id, newStatus) => {
                 if (!window.AppAuth) return;
+
+                // Get fault details before updating
+                const fault = faults.find(f => f.id === id);
+                const oldStatus = fault?.status;
+
                 const { error } = await window.AppAuth.updateFaultStatus(id, newStatus);
                 if (error) {
                     alert(error.message || 'Failed to update fault');
                     return;
                 }
+
+                // Send push notification when fault is marked as fixed
+                if (newStatus === 'fixed' && oldStatus !== 'fixed') {
+                    try {
+                        const faultDesc = fault?.description || 'תקלה';
+                        const apartment = fault?.apartment || '';
+                        await fetch('/api/send-push', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                title: lang === 'he' ? 'תקלה טופלה ✓' : 'Fault Resolved ✓',
+                                message: lang === 'he'
+                                    ? `התקלה "${faultDesc}" ${apartment ? `בדירה ${apartment} ` : ''}טופלה בהצלחה!`
+                                    : `Fault "${faultDesc}" ${apartment ? `in apartment ${apartment} ` : ''}has been resolved!`,
+                                url: '/faults.html'
+                            })
+                        });
+                    } catch (err) {
+                        console.error('Failed to send push notification:', err);
+                    }
+                }
+
                 await loadFaults();
             };
 
@@ -2220,17 +2247,28 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                                     }}>
                                         {statusLabels[fault.status][lang]}
                                     </span>
-                                    <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
-                                        {fault.status === 'open' && (
+                                    <div style={{ display: 'flex', gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
+                                        {fault.status !== 'open' && (
                                             <button
-                                                className="user-action-btn approve"
+                                                className="user-action-btn"
+                                                style={{ background: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}
+                                                onClick={() => handleStatusChange(fault.id, 'open')}
+                                                title={lang === 'he' ? 'החזר לפתוח' : 'Reopen'}
+                                            >
+                                                ↩️
+                                            </button>
+                                        )}
+                                        {fault.status !== 'progress' && (
+                                            <button
+                                                className="user-action-btn"
+                                                style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}
                                                 onClick={() => handleStatusChange(fault.id, 'progress')}
                                                 title={t.faults.markProgress}
                                             >
-                                                ⚙
+                                                ⚙️
                                             </button>
                                         )}
-                                        {fault.status === 'progress' && (
+                                        {fault.status !== 'fixed' && (
                                             <button
                                                 className="user-action-btn approve"
                                                 onClick={() => handleStatusChange(fault.id, 'fixed')}

@@ -46,6 +46,7 @@ window.APP_CONFIG = ${JSON.stringify(config, null, 2)};
 
 const publicDir = path.join(__dirname, '..', 'public');
 const configPath = path.join(publicDir, 'config.js');
+const rootConfigPath = path.join(__dirname, '..', 'config.js');
 
 // Ensure public directory exists
 if (!fs.existsSync(publicDir)) {
@@ -53,4 +54,5 @@ if (!fs.existsSync(publicDir)) {
 }
 
 fs.writeFileSync(configPath, configContent);
-console.log('Generated public/config.js from environment variables');
+fs.writeFileSync(rootConfigPath, configContent);
+console.log('Generated public/config.js and config.js from environment variables');

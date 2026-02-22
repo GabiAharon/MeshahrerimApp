@@ -58,6 +58,47 @@
             return data;
         },
 
+        async ensureCurrentUserProfile(fallback = {}) {
+            const { client, error: clientError } = withClient();
+            if (clientError) return { data: null, error: clientError };
+
+            const { data: userData, error: userError } = await client.auth.getUser();
+            const user = userData?.user;
+            if (userError || !user) {
+                return { data: null, error: userError || { message: 'Not authenticated' } };
+            }
+
+            const { data: existingProfile, error: existingError } = await client
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (existingError) return { data: null, error: existingError };
+            if (existingProfile) return { data: existingProfile, error: null };
+
+            const metadata = user.user_metadata || {};
+            const fallbackUserType = fallback.user_type || metadata.user_type;
+            const normalizedUserType = fallbackUserType === 'owner' ? 'owner' : 'tenant';
+
+            const payload = {
+                id: user.id,
+                email: user.email || fallback.email || '',
+                full_name: fallback.full_name || metadata.full_name || metadata.name || (user.email ? user.email.split('@')[0] : 'Resident'),
+                apartment: fallback.apartment || metadata.apartment || '',
+                phone: fallback.phone || metadata.phone || null,
+                user_type: normalizedUserType
+            };
+
+            const { data, error } = await client
+                .from('profiles')
+                .upsert(payload, { onConflict: 'id' })
+                .select()
+                .single();
+
+            return { data, error };
+        },
+
         async getCurrentProfile() {
             const user = await this.getCurrentUser();
             if (!user) return null;
@@ -167,6 +208,17 @@
                 .from('profiles')
                 .select('*')
                 .order('created_at', { ascending: false });
+            return { data: result.data || [], error: result.error };
+        },
+
+        async getAdminUsers() {
+            const { client, error } = withClient();
+            if (error) return { data: [], error: null };
+
+            const result = await client
+                .from('profiles')
+                .select('id, email, full_name')
+                .eq('is_admin', true);
             return { data: result.data || [], error: result.error };
         },
 

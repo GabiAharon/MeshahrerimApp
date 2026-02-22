@@ -13,10 +13,15 @@ export default async function handler(req, res) {
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
   const title = (body.title || '').toString().trim();
   const message = (body.message || '').toString().trim();
-  const url = (body.url || '/index.html').toString();
+  const url = (body.url || '/admin.html').toString();
+  const adminUserIds = body.adminUserIds || []; // Array of admin user IDs
 
   if (!title || !message) {
     return res.status(400).json({ error: 'title and message are required' });
+  }
+
+  if (!adminUserIds || adminUserIds.length === 0) {
+    return res.status(400).json({ error: 'No admin users to notify' });
   }
 
   try {
@@ -28,13 +33,13 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         app_id: appId,
-        included_segments: ['All'],
+        include_external_user_ids: adminUserIds, // Send only to specific admins
         target_channel: 'push',
         headings: { en: title, he: title },
         contents: { en: message, he: message },
         url,
         // Do NOT group notifications - each is separate
-        android_channel_id: 'notices',
+        android_channel_id: 'admin_alerts',
         priority: 10
       })
     });

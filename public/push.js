@@ -8,7 +8,34 @@
         sdkLoaded: false,
         currentUserId: null,
         initPromise: null,
-        promptButtonShown: false
+        promptButtonShown: false,
+        indexedDBAvailable: false
+    };
+
+    // Check IndexedDB availability
+    const checkIndexedDB = async () => {
+        if (!window.indexedDB) {
+            console.warn('IndexedDB not available in this browser');
+            return false;
+        }
+
+        try {
+            const testDB = await new Promise((resolve, reject) => {
+                const request = indexedDB.open('__test__', 1);
+                request.onsuccess = () => {
+                    const db = request.result;
+                    db.close();
+                    indexedDB.deleteDatabase('__test__');
+                    resolve(true);
+                };
+                request.onerror = () => reject(request.error);
+                request.onblocked = () => reject(new Error('IndexedDB blocked'));
+            });
+            return testDB;
+        } catch (error) {
+            console.warn('IndexedDB test failed:', error);
+            return false;
+        }
     };
 
     const removePromptButton = () => {
@@ -120,10 +147,21 @@
     window.AppPush = {
         async init(externalUserId) {
             if (!ONE_SIGNAL_APP_ID) {
+                console.warn('Push init skipped: OneSignal app id not configured');
                 return { error: { message: 'OneSignal app id not configured' } };
             }
             if (!window.isSecureContext) {
+                console.warn('Push init skipped: Requires HTTPS context');
                 return { error: { message: 'Push requires HTTPS context' } };
+            }
+
+            // Check IndexedDB availability first
+            if (!state.indexedDBAvailable) {
+                state.indexedDBAvailable = await checkIndexedDB();
+                if (!state.indexedDBAvailable) {
+                    console.warn('Push init skipped: IndexedDB not available');
+                    return { error: { message: 'IndexedDB not available. Push notifications require IndexedDB support.' } };
+                }
             }
 
             try {
@@ -138,6 +176,15 @@
         async promptForPermission() {
             if (!ONE_SIGNAL_APP_ID) {
                 return { error: { message: 'OneSignal app id not configured' } };
+            }
+
+            // Check IndexedDB availability first
+            if (!state.indexedDBAvailable) {
+                state.indexedDBAvailable = await checkIndexedDB();
+                if (!state.indexedDBAvailable) {
+                    console.warn('Push prompt skipped: IndexedDB not available');
+                    return { error: { message: 'IndexedDB not available. Please check browser settings or try a different browser.' } };
+                }
             }
 
             try {

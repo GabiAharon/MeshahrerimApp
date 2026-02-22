@@ -1727,7 +1727,13 @@
                             return;
                         }
 
-                        const profile = await window.AppAuth.getUserProfile(user.id);
+                        let profile = await window.AppAuth.getUserProfile(user.id);
+                        if (!profile && window.AppAuth.ensureCurrentUserProfile) {
+                            const repairResult = await window.AppAuth.ensureCurrentUserProfile();
+                            if (repairResult?.data) {
+                                profile = repairResult.data;
+                            }
+                        }
                         if (!profile) {
                             setIsLoadingSession(false);
                             return;
@@ -1780,7 +1786,12 @@
                 );
 
                 if (error) {
-                    setGlobalError(error.message || 'Registration failed');
+                    const rawMessage = error.message || 'Registration failed';
+                    if (/already/i.test(rawMessage) && /register/i.test(rawMessage)) {
+                        setGlobalError('האימייל כבר קיים במערכת. נסה להתחבר במקום להירשם מחדש.');
+                    } else {
+                        setGlobalError(rawMessage);
+                    }
                     setIsSubmittingRegister(false);
                     return;
                 }
@@ -1814,9 +1825,15 @@
                     return;
                 }
 
-                const profile = await window.AppAuth.getUserProfile(user.id);
+                let profile = await window.AppAuth.getUserProfile(user.id);
+                if (!profile && window.AppAuth.ensureCurrentUserProfile) {
+                    const repairResult = await window.AppAuth.ensureCurrentUserProfile();
+                    if (repairResult?.data) {
+                        profile = repairResult.data;
+                    }
+                }
                 if (!profile) {
-                    setGlobalError('Could not load user profile.');
+                    setGlobalError('Could not load user profile. Try signing in again.');
                     return;
                 }
 
