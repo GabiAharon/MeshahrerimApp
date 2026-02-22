@@ -3194,8 +3194,13 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         const pushInitResult = await window.AppPush.init(user.id);
                         if (pushInitResult?.error) {
                             console.warn('Admin push init failed:', pushInitResult.error);
-                        } else if (typeof window.AppPush.ensurePromptButton === 'function') {
-                            await window.AppPush.ensurePromptButton();
+                        } else {
+                            if (typeof window.AppPush.setTag === 'function') {
+                                await window.AppPush.setTag('role', 'admin');
+                            }
+                            if (typeof window.AppPush.ensurePromptButton === 'function') {
+                                await window.AppPush.ensurePromptButton();
+                            }
                         }
                     }
 

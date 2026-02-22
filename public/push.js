@@ -225,6 +225,22 @@
                 console.warn('Could not evaluate push permission state:', error);
                 showPromptButton();
             }
+        },
+
+        async setTag(key, value) {
+            if (!ONE_SIGNAL_APP_ID) return { error: { message: 'OneSignal app id not configured' } };
+            if (!key) return { error: { message: 'Tag key is required' } };
+            try {
+                await ensureInit(state.currentUserId || null);
+                await runWithOneSignal(async (OneSignal) => {
+                    const tagValue = value == null ? '' : String(value);
+                    await OneSignal.User.addTag(String(key), tagValue);
+                });
+                return { data: true, error: null };
+            } catch (error) {
+                console.warn('Failed setting OneSignal tag:', error);
+                return { error };
+            }
         }
     };
 })();

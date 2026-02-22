@@ -69,37 +69,58 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://api.onesignal.com/notifications?c=push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${apiKey}`
-      },
-      body: JSON.stringify({
-        app_id: appId,
-        include_external_user_ids: adminUserIds, // Send only to specific admins
-        target_channel: 'push',
-        headings: { en: title, he: title },
-        contents: { en: message, he: message },
-        url,
-        // Do NOT group notifications - each is separate
-        priority: 10
-      })
+    const sendNotification = async (bodyPayload) => {
+      const response = await fetch('https://api.onesignal.com/notifications?c=push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Key ${apiKey}`
+        },
+        body: JSON.stringify(bodyPayload)
+      });
+      const result = await response.json();
+      return { response, result };
+    };
+
+    const commonPayload = {
+      app_id: appId,
+      target_channel: 'push',
+      headings: { en: title, he: title },
+      contents: { en: message, he: message },
+      url,
+      priority: 10
+    };
+
+    // Primary route: direct by external_id aliases (user.id)
+    const primary = await sendNotification({
+      ...commonPayload,
+      include_aliases: { external_id: adminUserIds }
     });
 
-    const result = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: result?.errors || result?.message || 'OneSignal request failed',
-        hint: response.status === 401 || response.status === 403
+    // Fallback route: tagged admins (role=admin) in case alias mapping is missing.
+    let finalResponse = primary.response;
+    let finalResult = primary.result;
+    if (primary.response.ok && Number(primary.result?.recipients || 0) === 0) {
+      const fallback = await sendNotification({
+        ...commonPayload,
+        filters: [{ field: 'tag', key: 'role', relation: '=', value: 'admin' }]
+      });
+      finalResponse = fallback.response;
+      finalResult = fallback.result;
+    }
+
+    if (!finalResponse.ok) {
+      return res.status(finalResponse.status).json({
+        error: finalResult?.errors || finalResult?.message || 'OneSignal request failed',
+        hint: finalResponse.status === 401 || finalResponse.status === 403
           ? 'Check ONESIGNAL_APP_API_KEY in Vercel. Paste raw key only, without prefix.'
           : undefined
       });
     }
 
     return res.status(200).json({
-      id: result.id,
-      recipients: result.recipients || 0
+      id: finalResult.id,
+      recipients: finalResult.recipients || 0
     });
   } catch (error) {
     return res.status(500).json({

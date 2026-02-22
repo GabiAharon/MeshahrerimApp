@@ -1568,6 +1568,9 @@
                                 if (initResult?.error) {
                                     console.warn('Push init skipped:', initResult.error.message || initResult.error);
                                 } else {
+                                    if (typeof window.AppPush.setTag === 'function') {
+                                        await window.AppPush.setTag('role', profile?.is_admin ? 'admin' : 'resident');
+                                    }
                                     const permissionResult = await window.AppPush.promptForPermission();
                                     if (permissionResult?.error) {
                                         console.warn('Push permission skipped:', permissionResult.error.message || permissionResult.error);
