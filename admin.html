@@ -3190,6 +3190,15 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                         return;
                     }
 
+                    if (window.AppPush) {
+                        const pushInitResult = await window.AppPush.init(user.id);
+                        if (pushInitResult?.error) {
+                            console.warn('Admin push init failed:', pushInitResult.error);
+                        } else if (typeof window.AppPush.ensurePromptButton === 'function') {
+                            await window.AppPush.ensurePromptButton();
+                        }
+                    }
+
                     setAccessState('allowed');
                 };
                 checkAdminAccess();
@@ -3323,6 +3332,7 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
             </LanguageProvider>
         );
     </script>
+    <script src="/push.js"></script>
     <script src="/pwa.js"></script>
 </body>
 </html>

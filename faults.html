@@ -1254,9 +1254,6 @@
 
                 // Send push notification to admins about new fault
                 try {
-                    const { data: admins } = await window.AppAuth.getAdminUsers();
-                    if (admins && admins.length > 0) {
-                        const adminUserIds = admins.map(admin => admin.id);
                         const apartment = currentProfile?.apartment || 'לא ידוע';
                         const categoryLabels = {
                             water: 'מים',
@@ -1268,17 +1265,19 @@
                         };
                         const categoryLabel = categoryLabels[data.category] || data.category;
 
-                        await fetch('/api/send-push-to-admins', {
+                        const pushResponse = await fetch('/api/send-push-to-admins', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 title: '🔔 תקלה חדשה דווחה',
                                 message: `תקלת ${categoryLabel} בדירה ${apartment}: ${data.description}`,
-                                url: '/admin.html',
-                                adminUserIds
+                                url: '/admin.html'
                             })
                         });
-                    }
+                        if (!pushResponse.ok) {
+                            const payload = await pushResponse.json().catch(() => ({}));
+                            console.warn('Admin notification push failed:', payload?.error || pushResponse.status);
+                        }
                 } catch (err) {
                     console.error('Failed to send admin notification:', err);
                 }

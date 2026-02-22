@@ -14,6 +14,8 @@ export default async function handler(req, res) {
     .replace(/^['"]|['"]$/g, '')
     .replace(/^basic\s+/i, '')
     .replace(/^key\s+/i, '');
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const supabaseServiceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
   if (!appId || !apiKey) {
     return res.status(500).json({
@@ -26,14 +28,44 @@ export default async function handler(req, res) {
   const title = (body.title || '').toString().trim();
   const message = (body.message || '').toString().trim();
   const url = (body.url || '/admin.html').toString();
-  const adminUserIds = body.adminUserIds || []; // Array of admin user IDs
+  const adminUserIdsFromClient = Array.isArray(body.adminUserIds) ? body.adminUserIds : [];
 
   if (!title || !message) {
     return res.status(400).json({ error: 'title and message are required' });
   }
 
-  if (!adminUserIds || adminUserIds.length === 0) {
-    return res.status(400).json({ error: 'No admin users to notify' });
+  let adminUserIds = adminUserIdsFromClient
+    .map((id) => String(id || '').trim())
+    .filter(Boolean);
+
+  if (adminUserIds.length === 0 && supabaseUrl && supabaseServiceRoleKey) {
+    try {
+      const query = `${supabaseUrl}/rest/v1/profiles?select=id&is_admin=eq.true&is_approved=eq.true`;
+      const supabaseRes = await fetch(query, {
+        method: 'GET',
+        headers: {
+          apikey: supabaseServiceRoleKey,
+          Authorization: `Bearer ${supabaseServiceRoleKey}`
+        }
+      });
+      const supabaseData = await supabaseRes.json();
+      if (supabaseRes.ok && Array.isArray(supabaseData)) {
+        adminUserIds = supabaseData
+          .map((row) => String(row?.id || '').trim())
+          .filter(Boolean);
+      }
+    } catch (err) {
+      console.error('Failed to fetch admin ids from Supabase:', err);
+    }
+  }
+
+  adminUserIds = Array.from(new Set(adminUserIds));
+
+  if (adminUserIds.length === 0) {
+    return res.status(400).json({
+      error: 'No admin users to notify',
+      hint: 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel so server can resolve admin user ids.'
+    });
   }
 
   try {
