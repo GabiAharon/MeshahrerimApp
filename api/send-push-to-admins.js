@@ -51,7 +51,6 @@ export default async function handler(req, res) {
         contents: { en: message, he: message },
         url,
         // Do NOT group notifications - each is separate
-        android_channel_id: 'admin_alerts',
         priority: 10
       })
     });
