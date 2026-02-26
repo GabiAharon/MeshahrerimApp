@@ -174,20 +174,40 @@
                 await ensureInit(externalUserId);
 
                 // Store the OneSignal subscription ID in the user's profile so the
-                // server can use include_subscription_ids for reliable push targeting
-                // without needing external_id aliases to be pre-configured.
+                // server can use include_subscription_ids for reliable push targeting.
+                // The subscription ID may not be available immediately after init,
+                // so we also listen for the 'change' event in case it arrives later.
                 if (externalUserId && window.AppAuth) {
+                    const saveSubId = async (subId) => {
+                        if (!subId) return;
+                        try {
+                            await window.AppAuth.updateMyProfile(String(externalUserId), {
+                                onesignal_subscription_id: subId
+                            });
+                        } catch (e) {
+                            console.warn('Could not store OneSignal subscription id:', e);
+                        }
+                    };
+
                     try {
                         await runWithOneSignal(async (OneSignal) => {
+                            // Try reading it right away
                             const subId = OneSignal.User?.PushSubscription?.id;
                             if (subId) {
-                                await window.AppAuth.updateMyProfile(String(externalUserId), {
-                                    onesignal_subscription_id: subId
+                                await saveSubId(subId);
+                            } else {
+                                // Not ready yet — listen for when the subscription becomes available
+                                OneSignal.User.PushSubscription.addEventListener('change', function handler(evt) {
+                                    const newId = evt?.current?.id;
+                                    if (newId) {
+                                        saveSubId(newId);
+                                        OneSignal.User.PushSubscription.removeEventListener('change', handler);
+                                    }
                                 });
                             }
                         });
                     } catch (e) {
-                        console.warn('Could not store OneSignal subscription id:', e);
+                        console.warn('Could not read OneSignal subscription id:', e);
                     }
                 }
 
