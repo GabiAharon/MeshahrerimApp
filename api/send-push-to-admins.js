@@ -61,13 +61,6 @@ export default async function handler(req, res) {
 
   adminUserIds = Array.from(new Set(adminUserIds));
 
-  if (adminUserIds.length === 0) {
-    return res.status(400).json({
-      error: 'No admin users to notify',
-      hint: 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel so server can resolve admin user ids.'
-    });
-  }
-
   try {
     const sendNotification = async (bodyPayload) => {
       const response = await fetch('https://api.onesignal.com/notifications?c=push', {
@@ -92,6 +85,26 @@ export default async function handler(req, res) {
       collapse_id: `admin-${Date.now()}`,
       priority: 10
     };
+
+    // If no admin IDs available (SUPABASE_SERVICE_ROLE_KEY not set or lookup failed),
+    // go directly to tag-based filter — no 400, always try to deliver.
+    if (adminUserIds.length === 0) {
+      const tagResult = await sendNotification({
+        ...commonPayload,
+        filters: [{ field: 'tag', key: 'role', relation: '=', value: 'admin' }]
+      });
+      if (!tagResult.response.ok) {
+        return res.status(tagResult.response.status).json({
+          error: tagResult.result?.errors || tagResult.result?.message || 'OneSignal request failed',
+          hint: 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel for more reliable admin targeting.'
+        });
+      }
+      return res.status(200).json({
+        id: tagResult.result.id,
+        recipients: tagResult.result.recipients || 0,
+        route: 'tag-filter'
+      });
+    }
 
     // Primary route: direct by external_id aliases (user.id)
     const primary = await sendNotification({
