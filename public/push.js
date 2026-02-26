@@ -172,6 +172,25 @@
 
             try {
                 await ensureInit(externalUserId);
+
+                // Store the OneSignal subscription ID in the user's profile so the
+                // server can use include_subscription_ids for reliable push targeting
+                // without needing external_id aliases to be pre-configured.
+                if (externalUserId && window.AppAuth) {
+                    try {
+                        await runWithOneSignal(async (OneSignal) => {
+                            const subId = OneSignal.User?.PushSubscription?.id;
+                            if (subId) {
+                                await window.AppAuth.updateMyProfile(String(externalUserId), {
+                                    onesignal_subscription_id: subId
+                                });
+                            }
+                        });
+                    } catch (e) {
+                        console.warn('Could not store OneSignal subscription id:', e);
+                    }
+                }
+
                 return { data: true, error: null };
             } catch (error) {
                 console.error('Push init failed:', error);

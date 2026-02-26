@@ -28,19 +28,18 @@ export default async function handler(req, res) {
   const title = (body.title || '').toString().trim();
   const message = (body.message || '').toString().trim();
   const url = (body.url || '/admin.html').toString();
-  const adminUserIdsFromClient = Array.isArray(body.adminUserIds) ? body.adminUserIds : [];
 
   if (!title || !message) {
     return res.status(400).json({ error: 'title and message are required' });
   }
 
-  let adminUserIds = adminUserIdsFromClient
-    .map((id) => String(id || '').trim())
-    .filter(Boolean);
+  // Look up admin profiles from Supabase — fetch both user id and subscription id.
+  let adminUserIds = [];
+  let adminSubscriptionIds = [];
 
-  if (adminUserIds.length === 0 && supabaseUrl && supabaseServiceRoleKey) {
+  if (supabaseUrl && supabaseServiceRoleKey) {
     try {
-      const query = `${supabaseUrl}/rest/v1/profiles?select=id&is_admin=eq.true&is_approved=eq.true`;
+      const query = `${supabaseUrl}/rest/v1/profiles?select=id,onesignal_subscription_id&is_admin=eq.true&is_approved=eq.true`;
       const supabaseRes = await fetch(query, {
         method: 'GET',
         headers: {
@@ -53,13 +52,17 @@ export default async function handler(req, res) {
         adminUserIds = supabaseData
           .map((row) => String(row?.id || '').trim())
           .filter(Boolean);
+        adminSubscriptionIds = supabaseData
+          .map((row) => String(row?.onesignal_subscription_id || '').trim())
+          .filter(Boolean);
       }
     } catch (err) {
-      console.error('Failed to fetch admin ids from Supabase:', err);
+      console.error('Failed to fetch admin profiles from Supabase:', err);
     }
   }
 
   adminUserIds = Array.from(new Set(adminUserIds));
+  adminSubscriptionIds = Array.from(new Set(adminSubscriptionIds));
 
   try {
     const sendNotification = async (bodyPayload) => {
@@ -81,61 +84,58 @@ export default async function handler(req, res) {
       headings: { en: title, he: title },
       contents: { en: message, he: message },
       url,
-      // Unique collapse_id per notification — prevents overwriting previous ones
-      collapse_id: `admin-${Date.now()}`,
       priority: 10
     };
 
-    // If no admin IDs available (SUPABASE_SERVICE_ROLE_KEY not set or lookup failed),
-    // go directly to tag-based filter — no 400, always try to deliver.
-    if (adminUserIds.length === 0) {
-      const tagResult = await sendNotification({
+    // Route 1 (most reliable): direct subscription IDs stored in profiles table.
+    // These are set when the admin opens any page with push.js loaded.
+    if (adminSubscriptionIds.length > 0) {
+      const result = await sendNotification({
         ...commonPayload,
-        filters: [{ field: 'tag', key: 'role', relation: '=', value: 'admin' }]
+        include_subscription_ids: adminSubscriptionIds
       });
-      if (!tagResult.response.ok) {
-        return res.status(tagResult.response.status).json({
-          error: tagResult.result?.errors || tagResult.result?.message || 'OneSignal request failed',
-          hint: 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel for more reliable admin targeting.'
+      if (result.response.ok) {
+        return res.status(200).json({
+          id: result.result.id,
+          recipients: result.result.recipients || 0,
+          route: 'subscription-ids'
         });
       }
-      return res.status(200).json({
-        id: tagResult.result.id,
-        recipients: tagResult.result.recipients || 0,
-        route: 'tag-filter'
-      });
+      console.warn('Subscription-id route failed:', result.result);
     }
 
-    // Primary route: direct by external_id aliases (user.id)
-    const primary = await sendNotification({
-      ...commonPayload,
-      include_aliases: { external_id: adminUserIds }
-    });
-
-    // Fallback route: tagged admins (role=admin) in case alias mapping is missing.
-    let finalResponse = primary.response;
-    let finalResult = primary.result;
-    if (primary.response.ok && Number(primary.result?.recipients || 0) === 0) {
-      const fallback = await sendNotification({
+    // Route 2: external_id aliases (user.id linked via OneSignal.login).
+    if (adminUserIds.length > 0) {
+      const primary = await sendNotification({
         ...commonPayload,
-        filters: [{ field: 'tag', key: 'role', relation: '=', value: 'admin' }]
+        include_aliases: { external_id: adminUserIds }
       });
-      finalResponse = fallback.response;
-      finalResult = fallback.result;
+      if (primary.response.ok && Number(primary.result?.recipients || 0) > 0) {
+        return res.status(200).json({
+          id: primary.result.id,
+          recipients: primary.result.recipients || 0,
+          route: 'external-id'
+        });
+      }
     }
 
-    if (!finalResponse.ok) {
-      return res.status(finalResponse.status).json({
-        error: finalResult?.errors || finalResult?.message || 'OneSignal request failed',
-        hint: finalResponse.status === 401 || finalResponse.status === 403
+    // Route 3 (broadest fallback): tag filter — works if admin has role=admin tag set.
+    const tagResult = await sendNotification({
+      ...commonPayload,
+      filters: [{ field: 'tag', key: 'role', relation: '=', value: 'admin' }]
+    });
+    if (!tagResult.response.ok) {
+      return res.status(tagResult.response.status).json({
+        error: tagResult.result?.errors || tagResult.result?.message || 'OneSignal request failed',
+        hint: tagResult.response.status === 401 || tagResult.response.status === 403
           ? 'Check ONESIGNAL_APP_API_KEY in Vercel. Paste raw key only, without prefix.'
-          : undefined
+          : 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel for reliable admin targeting.'
       });
     }
-
     return res.status(200).json({
-      id: finalResult.id,
-      recipients: finalResult.recipients || 0
+      id: tagResult.result.id,
+      recipients: tagResult.result.recipients || 0,
+      route: 'tag-filter'
     });
   } catch (error) {
     return res.status(500).json({

@@ -1,11 +1,29 @@
 // PWA + OneSignal Combined Service Worker
+
+// Force unique notification tag so every push stacks in the notification shade.
+// OneSignal v16 web SW may reuse a fixed tag, causing each new notification to
+// replace the previous one.  Patching showNotification before importing the
+// OneSignal SW ensures our override runs first for every call they make.
+(function () {
+  const _show = self.registration.showNotification.bind(self.registration);
+  self.registration.showNotification = function (title, options) {
+    options = Object.assign({}, options);
+    // Assign a unique tag unless the caller already set one with a timestamp
+    // or random component (identified by length > 30 – OneSignal IDs are UUIDs).
+    if (!options.tag || options.tag.length < 30) {
+      options.tag = 'n-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+    }
+    return _show(title, options);
+  };
+})();
+
 try {
   importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 } catch (e) {
   console.warn('OneSignal SW failed to load:', e);
 }
 
-const CACHE_NAME = 'mybuilding-cache-v18';
+const CACHE_NAME = 'mybuilding-cache-v19';
 const APP_SHELL = [
   '/',
   '/index.html',
