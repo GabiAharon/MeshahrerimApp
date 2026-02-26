@@ -832,6 +832,10 @@
         },
 
         async sendPushBroadcast(payload) {
+            if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+                console.log('[dev] Push broadcast skipped on localhost:', payload.title);
+                return { data: { id: 'dev-mock', recipients: 0 }, error: null };
+            }
             try {
                 const response = await fetch('/api/send-push', {
                     method: 'POST',
@@ -843,9 +847,9 @@
                     })
                 });
 
-                const data = await response.json();
+                const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
-                    return { error: { message: data.error || 'Push send failed' } };
+                    return { error: { message: data.error || `Push send failed (${response.status})` } };
                 }
                 return { data, error: null };
             } catch (error) {

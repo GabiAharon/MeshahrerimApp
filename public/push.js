@@ -144,8 +144,14 @@
         await state.initPromise;
     };
 
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
     window.AppPush = {
         async init(externalUserId) {
+            if (isLocalhost) {
+                console.log('[dev] Push init skipped on localhost');
+                return { data: true, error: null };
+            }
             if (!ONE_SIGNAL_APP_ID) {
                 console.warn('Push init skipped: OneSignal app id not configured');
                 return { error: { message: 'OneSignal app id not configured' } };
@@ -174,6 +180,10 @@
         },
 
         async promptForPermission() {
+            if (isLocalhost) {
+                console.log('[dev] Push permission skipped on localhost');
+                return { data: true, error: null };
+            }
             if (!ONE_SIGNAL_APP_ID) {
                 return { error: { message: 'OneSignal app id not configured' } };
             }
@@ -210,6 +220,7 @@
         },
 
         async ensurePromptButton() {
+            if (isLocalhost) return;
             if (!ONE_SIGNAL_APP_ID) return;
             try {
                 await ensureInit(null);
@@ -228,6 +239,7 @@
         },
 
         async setTag(key, value) {
+            if (isLocalhost) return { data: true, error: null };
             if (!ONE_SIGNAL_APP_ID) return { error: { message: 'OneSignal app id not configured' } };
             if (!key) return { error: { message: 'Tag key is required' } };
             try {

@@ -88,6 +88,8 @@ export default async function handler(req, res) {
       headings: { en: title, he: title },
       contents: { en: message, he: message },
       url,
+      // Unique collapse_id per notification — prevents overwriting previous ones
+      collapse_id: `admin-${Date.now()}`,
       priority: 10
     };
 

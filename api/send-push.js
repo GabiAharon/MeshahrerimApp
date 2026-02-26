@@ -45,7 +45,8 @@ export default async function handler(req, res) {
         headings: { en: title, he: title },
         contents: { en: message, he: message },
         url,
-        // Do NOT group notifications - each is separate
+        // Unique collapse_id per notification — prevents overwriting previous ones
+        collapse_id: `push-${Date.now()}`,
         priority: 10
       })
     });

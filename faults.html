@@ -1224,6 +1224,14 @@
 
                     setCurrentUser(user);
                     setCurrentProfile(profile);
+
+                    if (window.AppPush) {
+                        await window.AppPush.init(user.id);
+                        if (profile?.is_admin && typeof window.AppPush.setTag === 'function') {
+                            await window.AppPush.setTag('role', 'admin');
+                        }
+                    }
+
                     await loadFaults(false);
                 };
                 bootstrap();
@@ -1252,7 +1260,7 @@
                     return;
                 }
 
-                // Send push notification to admins about new fault
+                // Send push notification about new fault
                 try {
                         const apartment = currentProfile?.apartment || 'לא ידוע';
                         const categoryLabels = {
@@ -1264,22 +1272,41 @@
                             other: 'אחר'
                         };
                         const categoryLabel = categoryLabels[data.category] || data.category;
+                        const isReporterAdmin = currentProfile?.is_admin;
 
-                        const pushResponse = await fetch('/api/send-push-to-admins', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                title: '🔔 תקלה חדשה דווחה',
-                                message: `תקלת ${categoryLabel} בדירה ${apartment}: ${data.description}`,
-                                url: '/admin.html'
-                            })
-                        });
-                        if (!pushResponse.ok) {
-                            const payload = await pushResponse.json().catch(() => ({}));
-                            console.warn('Admin notification push failed:', payload?.error || pushResponse.status);
+                        if (isReporterAdmin) {
+                            // Admin reporting a fault → notify ALL residents
+                            const pushResponse = await fetch('/api/send-push', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    title: '📢 הודעה מהנהלת הבניין',
+                                    message: `תקלת ${categoryLabel}: ${data.description}`,
+                                    url: '/faults.html'
+                                })
+                            });
+                            if (!pushResponse.ok) {
+                                const payload = await pushResponse.json().catch(() => ({}));
+                                console.warn('Broadcast push failed:', payload?.error || pushResponse.status);
+                            }
+                        } else {
+                            // Resident reporting a fault → notify admins only
+                            const pushResponse = await fetch('/api/send-push-to-admins', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    title: '🔔 תקלה חדשה דווחה',
+                                    message: `תקלת ${categoryLabel} בדירה ${apartment}: ${data.description}`,
+                                    url: '/admin.html'
+                                })
+                            });
+                            if (!pushResponse.ok) {
+                                const payload = await pushResponse.json().catch(() => ({}));
+                                console.warn('Admin notification push failed:', payload?.error || pushResponse.status);
+                            }
                         }
                 } catch (err) {
-                    console.error('Failed to send admin notification:', err);
+                    console.error('Failed to send fault notification:', err);
                 }
 
                 await loadFaults(false);
@@ -1360,5 +1387,6 @@
         );
     </script>
     <script src="/pwa.js"></script>
+    <script src="/push.js"></script>
 </body>
 </html>

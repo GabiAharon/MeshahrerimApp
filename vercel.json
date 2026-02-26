@@ -6,5 +6,11 @@
     { "source": "/faults", "destination": "/faults.html" },
     { "source": "/notices", "destination": "/notices.html" },
     { "source": "/profile", "destination": "/profile.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/keepalive",
+      "schedule": "0 6 */4 * *"
+    }
   ]
 }

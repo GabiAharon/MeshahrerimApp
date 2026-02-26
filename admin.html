@@ -2146,8 +2146,8 @@ const ExpensesSection = ({ onAdd, reloadToken }) => {
                             body: JSON.stringify({
                                 title: lang === 'he' ? 'תקלה טופלה ✓' : 'Fault Resolved ✓',
                                 message: lang === 'he'
-                                    ? `התקלה "${faultDesc}" ${apartment ? `בדירה ${apartment} ` : ''}טופלה בהצלחה!`
-                                    : `Fault "${faultDesc}" ${apartment ? `in apartment ${apartment} ` : ''}has been resolved!`,
+                                    ? `התקלה "${faultDesc}" ${apartment ? `בדירה ${apartment} ` : ''}טופלה בהצלחה! תודה על הסבלנות 🙏`
+                                    : `Fault "${faultDesc}" ${apartment ? `in apartment ${apartment} ` : ''}has been resolved! Thank you for your patience 🙏`,
                                 url: '/faults.html'
                             })
                         });
