@@ -33,11 +33,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'title and message are required' });
   }
 
-  // Look up admin profiles from Supabase — fetch both user id and subscription id.
-  let adminUserIds = [];
-  let adminSubscriptionIds = [];
+  // Accept targeting data from the client (populated via get_admin_push_targets RPC).
+  // This avoids the need for SUPABASE_SERVICE_ROLE_KEY on the server.
+  let adminSubscriptionIds = (Array.isArray(body.adminSubscriptionIds) ? body.adminSubscriptionIds : [])
+    .map((id) => String(id || '').trim())
+    .filter(Boolean);
+  let adminUserIds = (Array.isArray(body.adminUserIds) ? body.adminUserIds : [])
+    .map((id) => String(id || '').trim())
+    .filter(Boolean);
 
-  if (supabaseUrl && supabaseServiceRoleKey) {
+  // Fallback: server-side Supabase lookup if client didn't provide targets.
+  if (adminSubscriptionIds.length === 0 && adminUserIds.length === 0 && supabaseUrl && supabaseServiceRoleKey) {
     try {
       const query = `${supabaseUrl}/rest/v1/profiles?select=id,onesignal_subscription_id&is_admin=eq.true&is_approved=eq.true`;
       const supabaseRes = await fetch(query, {

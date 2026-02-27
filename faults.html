@@ -1290,14 +1290,30 @@
                                 console.warn('Broadcast push failed:', payload?.error || pushResponse.status);
                             }
                         } else {
-                            // Resident reporting a fault → notify admins only
+                            // Resident reporting a fault → notify admins only.
+                            // Look up admin push targets via DB function (bypasses RLS)
+                            // so we can pass subscription IDs directly to the API.
+                            let adminSubscriptionIds = [];
+                            let adminUserIds = [];
+                            try {
+                                const { data: targets } = await window.supabaseClient.rpc('get_admin_push_targets');
+                                if (Array.isArray(targets)) {
+                                    adminSubscriptionIds = targets.map(t => t.subscription_id).filter(Boolean);
+                                    adminUserIds = targets.map(t => t.user_id).filter(Boolean);
+                                }
+                            } catch (e) {
+                                console.warn('Could not fetch admin push targets:', e);
+                            }
+
                             const pushResponse = await fetch('/api/send-push-to-admins', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     title: '🔔 תקלה חדשה דווחה',
                                     message: `תקלת ${categoryLabel} בדירה ${apartment}: ${data.description}`,
-                                    url: '/admin.html'
+                                    url: '/admin.html',
+                                    adminSubscriptionIds,
+                                    adminUserIds
                                 })
                             });
                             if (!pushResponse.ok) {
